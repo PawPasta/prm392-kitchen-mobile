@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "315695684466",
+    "project_id": "prm392-kitchen",
+    "storage_bucket": "prm392-kitchen.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:315695684466:android:6e73059d746252bd58dbeb",
+        "android_client_info": {
+          "package_name": "com.prm392_sp26.prm392_kitchen_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "315695684466-g0ppq8ii48i91sq96enmdagabi96n4om.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.prm392_sp26.prm392_kitchen_mobile",
+            "certificate_hash": "531b90899ff5b5c0802a26fe89957c78ab9bdfbc"
+          }
+        },
+        {
+          "client_id": "315695684466-mb82utda4uh6he5hajqp6qbeco7uu13j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_Sb0EiyMTvnBfhqQOWMcLN52iMqY219I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "315695684466-mb82utda4uh6he5hajqp6qbeco7uu13j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
