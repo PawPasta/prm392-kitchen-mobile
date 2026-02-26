@@ -2,4 +2,51 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- === MÀU CHỦ ĐẠO: Cam ấm === -->
+    <!-- Dùng cho button, header, icon quan trọng -->
+    <color name="colorPrimary">#FF6B35</color>
+    <!-- Màu cam đậm hơn, dùng cho status bar trên cùng điện thoại -->
+    <color name="colorPrimaryDark">#E55A2B</color>
+    <!-- Màu cam nhạt, dùng cho highlight, hover -->
+    <color name="colorPrimaryLight">#FF8C42</color>
+    <!-- Màu phụ: cam vàng nhạt -->
+    <color name="colorSecondary">#FFB74D</color>
+
+
+    <!-- === MÀU NỀN === -->
+    <!-- Nền trang chính-->
+    <color name="colorBackground">#FFF8F0</color>
+    <!-- Nền card-->
+    <color name="colorSurface">#FFFFFF</color>
+    <!-- Nền search bar, nền phụ -->
+    <color name="colorSurfaceVariant">#FFF3E0</color>
+
+    <!-- === MÀU CHỮ === -->
+    <!-- Chữ chính: đen nâu -->
+    <color name="colorTextPrimary">#2D2D2D</color>
+    <!-- Chữ phụ: xám -->
+    <color name="colorTextSecondary">#757575</color>
+    <!-- Chữ placeholder: xám nhạt -->
+    <color name="colorTextHint">#BDBDBD</color>
+
+    <!-- === MÀU TRÊN NỀN CAM === -->
+    <!-- Chữ trắng khi đặt trên nền cam -->
+    <color name="colorOnPrimary">#FFFFFF</color>
+
+    <!-- === GRADIENT (chuyển màu) === -->
+    <!-- 2 màu này dùng để tạo gradient -->
+    <color name="gradientStart">#FF6B35</color>
+    <color name="gradientEnd">#FF9800</color>
+
+    <!-- === INDICATOR DOTS (chấm onboarding) === -->
+    <color name="dotActive">#FF6B35</color>
+    <color name="dotInactive">#E0E0E0</color>
+
+    <!-- === MÀU TRẠNG THÁI === -->
+    <color name="colorError">#E53935</color>
+    <color name="colorSuccess">#4CAF50</color>
+
+    <!-- === VIỀN CARD === -->
+    <color name="cardStroke">#F0F0F0</color>
 </resources>

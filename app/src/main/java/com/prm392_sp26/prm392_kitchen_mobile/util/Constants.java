@@ -6,7 +6,7 @@ package com.prm392_sp26.prm392_kitchen_mobile.util;
 public class Constants {
 
     // Base URL của backend API
-    public static final String BASE_URL = "http://10.0.2.2:8080/"; // localhost cho emulator
+    public static final String BASE_URL = "https://prm392-kitchen-be.onrender.com/";
 
     // SharedPreferences keys
     public static final String PREFS_NAME = "prm392_kitchen_prefs";

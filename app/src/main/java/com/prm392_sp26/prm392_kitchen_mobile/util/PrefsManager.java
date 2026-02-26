@@ -57,13 +57,29 @@ public class PrefsManager {
         return prefs.getString(Constants.KEY_REFRESH_TOKEN, null);
     }
 
+    /**
+     * Kiểm tra onboarding đã hoàn thành chưa
+     */
+    public boolean isOnboardingDone() {
+        return prefs.getBoolean("onboarding_done", false);
+    }
+    /**
+     * Đánh dấu đã xem onboarding xong
+     */
+    public void setOnboardingDone(boolean done) {
+        prefs.edit().putBoolean("onboarding_done", done).apply();
+    }
 
     /**
      * Xóa toàn bộ session khi logout
      */
     public void clearSession() {
+        // Đọc flag onboarding trước khi xóa
+        boolean onboardingDone = isOnboardingDone();
         SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
+        editor.clear(); // Xóa tất cả
+        // Ghi lại flag onboarding (không muốn user xem lại sau khi logout)
+        editor.putBoolean("onboarding_done", onboardingDone);
         editor.apply();
     }
 }

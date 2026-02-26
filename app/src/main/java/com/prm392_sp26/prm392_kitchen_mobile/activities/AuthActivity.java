@@ -1,10 +1,10 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,7 +52,7 @@ public class AuthActivity extends AppCompatActivity {
     private CredentialManager credentialManager;
     private PrefsManager prefsManager;
 
-    private Button btnGoogleSignIn;
+    private TextView btnGoogleSignIn;
     private ProgressBar progressAuth;
     private TextView tvStatus;
 
@@ -77,6 +77,9 @@ public class AuthActivity extends AppCompatActivity {
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
         progressAuth = findViewById(R.id.progressAuth);
         tvStatus = findViewById(R.id.tvStatus);
+
+        // Ẩn tvStatus mặc định (chỉ dùng cho trạng thái loading)
+        tvStatus.setVisibility(View.GONE);
 
         // Set click listener
         btnGoogleSignIn.setOnClickListener(v -> startGoogleSignIn());
@@ -122,7 +125,7 @@ public class AuthActivity extends AppCompatActivity {
                         firebaseAuthWithGoogle(googleCredential.getIdToken());
                     } catch (Exception e) {
                         setLoading(false);
-                        setStatus("Đăng nhập Google thất bại: " + e.getMessage());
+                        showErrorDialog("Đăng nhập Google thất bại", e.getMessage());
                         Log.e(TAG, "Google sign-in failed", e);
                     }
                 }
@@ -130,7 +133,12 @@ public class AuthActivity extends AppCompatActivity {
                 @Override
                 public void onError(GetCredentialException e) {
                     setLoading(false);
-                    setStatus("Đăng nhập bị hủy hoặc thất bại");
+                    showErrorDialog("Đăng nhập thất bại",
+                            "Không tìm thấy tài khoản Google.\n\n" +
+                            "Hãy kiểm tra:\n" +
+                            "• Thiết bị đã đăng nhập Google Account chưa?\n" +
+                            "• Google Play Services đã cập nhật chưa?\n\n" +
+                            "Chi tiết: " + e.getClass().getSimpleName());
                     Log.e(TAG, "Google sign-in cancelled/failed", e);
                 }
             };
@@ -141,19 +149,20 @@ public class AuthActivity extends AppCompatActivity {
     private void firebaseAuthWithGoogle(String googleIdToken) {
         if (googleIdToken == null || googleIdToken.trim().isEmpty()) {
             setLoading(false);
-            setStatus("Thiếu Google ID token");
+            showErrorDialog("Lỗi xác thực", "Thiếu Google ID Token");
             return;
         }
 
         AuthCredential credential = GoogleAuthProvider.getCredential(googleIdToken, null);
-        setStatus("Đang đăng nhập Firebase...");
+        setStatus("Đang xác thực với Firebase...");
 
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, signInTask -> {
                     if (!signInTask.isSuccessful()) {
                         setLoading(false);
                         Exception e = signInTask.getException();
-                        setStatus("Đăng nhập Firebase thất bại: " + (e == null ? "unknown" : e.getMessage()));
+                        showErrorDialog("Xác thực Firebase thất bại",
+                                e == null ? "Lỗi không xác định" : e.getMessage());
                         Log.e(TAG, "Firebase signInWithCredential failed", e);
                         return;
                     }
@@ -161,11 +170,11 @@ public class AuthActivity extends AppCompatActivity {
                     FirebaseUser user = firebaseAuth.getCurrentUser();
                     if (user == null) {
                         setLoading(false);
-                        setStatus("Đăng nhập thành công nhưng user null");
+                        showErrorDialog("Lỗi", "Đăng nhập thành công nhưng không lấy được thông tin user");
                         return;
                     }
 
-                    setStatus("Đăng nhập Firebase OK, đang lấy ID Token...");
+                    setStatus("Đang kết nối server...");
                     fetchFirebaseIdTokenAndLoginBackend(user);
                 });
     }
@@ -179,7 +188,8 @@ public class AuthActivity extends AppCompatActivity {
                     if (!tokenTask.isSuccessful()) {
                         setLoading(false);
                         Exception e = tokenTask.getException();
-                        setStatus("Lấy ID Token thất bại: " + (e == null ? "unknown" : e.getMessage()));
+                        showErrorDialog("Lỗi lấy Token",
+                                e == null ? "Lỗi không xác định" : e.getMessage());
                         Log.e(TAG, "getIdToken failed", e);
                         return;
                     }
@@ -187,11 +197,11 @@ public class AuthActivity extends AppCompatActivity {
                     String idToken = tokenTask.getResult().getToken();
                     if (idToken == null || idToken.isEmpty()) {
                         setLoading(false);
-                        setStatus("ID Token rỗng");
+                        showErrorDialog("Lỗi", "ID Token rỗng");
                         return;
                     }
 
-                    setStatus("Đang gửi đến server...");
+                    setStatus("Đang đăng nhập...");
                     loginToBackend(idToken);
                 });
     }
@@ -214,17 +224,18 @@ public class AuthActivity extends AppCompatActivity {
                     if (baseResponse.isSuccess() && baseResponse.getData() != null) {
                         // Lưu thông tin đăng nhập
                         prefsManager.saveLoginResponse(baseResponse.getData());
-                        setStatus("Đăng nhập thành công!");
-                        Toast.makeText(AuthActivity.this, baseResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AuthActivity.this,
+                                "Đăng nhập thành công! 🎉", Toast.LENGTH_SHORT).show();
 
                         // Chuyển đến MainActivity
                         navigateToMain();
                     } else {
-                        setStatus("Lỗi: " + baseResponse.getMessage());
-                        Toast.makeText(AuthActivity.this, baseResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                        showErrorDialog("Đăng nhập thất bại",
+                                baseResponse.getMessage() != null ? baseResponse.getMessage() : "Server trả về lỗi");
                     }
                 } else {
-                    setStatus("Lỗi server: " + response.code());
+                    showErrorDialog("Lỗi server",
+                            "Mã lỗi: " + response.code() + "\nVui lòng thử lại sau.");
                     Log.e(TAG, "Login failed with code: " + response.code());
                 }
             }
@@ -232,9 +243,11 @@ public class AuthActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call<BaseResponse<LoginResponse>> call, @NonNull Throwable t) {
                 setLoading(false);
-                setStatus("Lỗi kết nối: " + t.getMessage());
+                showErrorDialog("Không thể kết nối",
+                        "Không thể kết nối đến server.\n\n" +
+                        "Hãy kiểm tra kết nối mạng và thử lại.\n\n" +
+                        "Chi tiết: " + t.getMessage());
                 Log.e(TAG, "Login API call failed", t);
-                Toast.makeText(AuthActivity.this, "Không thể kết nối đến server", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -254,14 +267,28 @@ public class AuthActivity extends AppCompatActivity {
      */
     private void setLoading(boolean loading) {
         progressAuth.setVisibility(loading ? View.VISIBLE : View.GONE);
+        tvStatus.setVisibility(loading ? View.VISIBLE : View.GONE);
         btnGoogleSignIn.setEnabled(!loading);
     }
 
     /**
-     * Cập nhật status text
+     * Cập nhật status text (chỉ hiện khi đang loading)
      */
     private void setStatus(String message) {
         tvStatus.setText(message);
         Log.d(TAG, message);
+    }
+
+    /**
+     * Hiện popup dialog thông báo lỗi
+     */
+    private void showErrorDialog(String title, String message) {
+        tvStatus.setVisibility(View.GONE);
+        new AlertDialog.Builder(this)
+                .setTitle("⚠️ " + title)
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .setCancelable(true)
+                .show();
     }
 }

@@ -1,8 +1,26 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme -->
     <style name="Base.Theme.Prm392_kitchen_mobile" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Màu chính của app -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <!-- Màu container (nền nhạt hơn colorPrimary) -->
+        <item name="colorPrimaryContainer">@color/colorPrimaryLight</item>
+        <!-- Màu phụ -->
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <!-- Nền bề mặt (card, dialog) -->
+        <item name="colorSurface">@color/colorSurface</item>
+        <!-- Chữ trắng trên nền cam -->
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <!-- Chữ đen trên nền trắng -->
+        <item name="colorOnSurface">@color/colorTextPrimary</item>
+        <!-- Màu lỗi -->
+        <item name="colorError">@color/colorError</item>
+        <!-- Nền app -->
+        <item name="android:colorBackground">@color/colorBackground</item>
+        <!-- Màu thanh status bar (trên cùng điện thoại) -->
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <!-- Màu thanh navigation bar (dưới cùng điện thoại) -->
+        <item name="android:navigationBarColor">@color/colorSurface</item>
     </style>
 
     <style name="Theme.Prm392_kitchen_mobile" parent="Base.Theme.Prm392_kitchen_mobile" />
