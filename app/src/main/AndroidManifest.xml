@@ -42,6 +42,16 @@
             android:name=".activities.ProfileActivity"
             android:exported="false" />
 
+        <!-- OrderHistoryActivity - Order history -->
+        <activity
+            android:name=".activities.OrderHistoryActivity"
+            android:exported="false" />
+
+        <!-- OrderDetailActivity - Order detail -->
+        <activity
+            android:name=".activities.OrderDetailActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

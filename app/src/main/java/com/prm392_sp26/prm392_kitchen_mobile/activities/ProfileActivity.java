@@ -1,6 +1,5 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -10,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -19,6 +19,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserWallet;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
@@ -36,10 +37,16 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvProfileInitials;
     private TextView tvProfileName;
     private TextView tvProfileEmail;
+    private TextView btnEditProfile;
+    private TextView etProfileName;
     private ProgressBar progressProfile;
+    private View avatarContainer;
+    private View itemOrderHistory;
     private View itemWallet;
     private View walletBalanceContainer;
     private TextView tvWalletBalance;
+    private UserProfile currentProfile;
+    private boolean isEditingProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,14 +65,20 @@ public class ProfileActivity extends AppCompatActivity {
         tvProfileInitials = findViewById(R.id.tvProfileInitials);
         tvProfileName = findViewById(R.id.tvProfileName);
         tvProfileEmail = findViewById(R.id.tvProfileEmail);
+        btnEditProfile = findViewById(R.id.btnEditProfile);
+        etProfileName = findViewById(R.id.etProfileName);
         progressProfile = findViewById(R.id.progressProfile);
+        avatarContainer = findViewById(R.id.avatarContainer);
+        itemOrderHistory = findViewById(R.id.itemOrderHistory);
         itemWallet = findViewById(R.id.itemWallet);
         walletBalanceContainer = findViewById(R.id.walletBalanceContainer);
         tvWalletBalance = findViewById(R.id.tvWalletBalance);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnLogout).setOnClickListener(v -> performLogout());
+        itemOrderHistory.setOnClickListener(v -> navigateToOrderHistory());
         itemWallet.setOnClickListener(v -> toggleWalletBalance());
+        btnEditProfile.setOnClickListener(v -> toggleEditProfile());
 
         loadProfile();
     }
@@ -114,6 +127,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void bindProfile(UserProfile profile) {
+        currentProfile = profile;
         String displayName = profile.getDisplayName();
         if (displayName == null || displayName.trim().isEmpty()) {
             displayName = "User";
@@ -124,7 +138,28 @@ public class ProfileActivity extends AppCompatActivity {
         tvProfileName.setText(displayName);
         tvProfileEmail.setText(email);
         tvProfileInitials.setText(getInitials(displayName));
+        if (!isEditingProfile) {
+            etProfileName.setText(displayName);
+            tvProfileName.setVisibility(View.VISIBLE);
+        }
 
+    }
+
+    private void toggleEditProfile() {
+        if (!isEditingProfile) {
+            isEditingProfile = true;
+            btnEditProfile.setText("Lưu");
+            etProfileName.setVisibility(View.VISIBLE);
+            tvProfileName.setVisibility(View.GONE);
+            String displayName = currentProfile != null ? currentProfile.getDisplayName() : "";
+            etProfileName.setText(displayName == null ? "" : displayName);
+            avatarContainer.setBackgroundResource(R.drawable.bg_avatar_ring_orange);
+            return;
+        }
+
+        String newDisplayName = etProfileName.getText().toString().trim();
+        String imageUrl = currentProfile != null ? currentProfile.getImageUrl() : null;
+        updateProfile(newDisplayName, imageUrl);
     }
 
     private void setLoading(boolean loading) {
@@ -173,6 +208,66 @@ public class ProfileActivity extends AppCompatActivity {
                         tvWalletBalance.setText("Lỗi mạng khi tải số dư.");
                     }
                 });
+    }
+
+    private void updateProfile(String displayName, String imageUrl) {
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String safeDisplayName = displayName == null ? "" : displayName.trim();
+        String safeImageUrl = imageUrl == null || imageUrl.trim().isEmpty() ? null : imageUrl.trim();
+
+        setLoading(true);
+        ApiClient.getInstance()
+                .getApiService()
+                .updateCurrentUserProfile("Bearer " + token,
+                        new UpdateProfileRequest(safeDisplayName, safeImageUrl))
+                .enqueue(new Callback<BaseResponse<UserProfile>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<BaseResponse<UserProfile>> call,
+                            @NonNull Response<BaseResponse<UserProfile>> response) {
+                        setLoading(false);
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            BaseResponse<UserProfile> baseResponse = response.body();
+                            if (baseResponse.isSuccess() && baseResponse.getData() != null) {
+                                bindProfile(baseResponse.getData());
+                                isEditingProfile = false;
+                                btnEditProfile.setText("Edit");
+                                etProfileName.setVisibility(View.GONE);
+                                tvProfileName.setVisibility(View.VISIBLE);
+                                avatarContainer.setBackground(null);
+                                Toast.makeText(ProfileActivity.this,
+                                        "Cập nhật hồ sơ thành công.", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            Toast.makeText(ProfileActivity.this,
+                                    baseResponse.getMessage() != null ? baseResponse.getMessage()
+                                            : "Cập nhật hồ sơ thất bại.",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        Toast.makeText(ProfileActivity.this,
+                                "Server error: " + response.code(), Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<BaseResponse<UserProfile>> call, @NonNull Throwable t) {
+                        setLoading(false);
+                        Toast.makeText(ProfileActivity.this,
+                                "Lỗi mạng khi cập nhật hồ sơ.", Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void navigateToOrderHistory() {
+        Intent intent = new Intent(this, OrderHistoryActivity.class);
+        startActivity(intent);
     }
 
     private String getInitials(String name) {
