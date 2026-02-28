@@ -3,6 +3,7 @@ package com.prm392_sp26.prm392_kitchen_mobile;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.AuthActivity;
+import com.prm392_sp26.prm392_kitchen_mobile.activities.ProfileActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 public class MainActivity extends AppCompatActivity {
@@ -21,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvWelcome;
     private TextView tvUserInfo;
     private TextView btnLogout;
+    private View avatarPlaceholder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +43,11 @@ public class MainActivity extends AppCompatActivity {
         tvWelcome = findViewById(R.id.tvWelcome);
         tvUserInfo = findViewById(R.id.tvUserInfo);
         btnLogout = findViewById(R.id.btnLogout);
+        avatarPlaceholder = findViewById(R.id.avatarPlaceholder);
 
         displayUserInfo();
         btnLogout.setOnClickListener(v -> logout());
+        avatarPlaceholder.setOnClickListener(v -> navigateToProfile());
     }
 
     private void displayUserInfo() {
@@ -95,4 +100,9 @@ public class MainActivity extends AppCompatActivity {
     //     Intent intent = new Intent(this, ProfileActivity.class);
     //     startActivity(intent);
     // }
+
+    private void navigateToProfile() {
+        Intent intent = new Intent(this, ProfileActivity.class);
+        startActivity(intent);
+    }
 }
