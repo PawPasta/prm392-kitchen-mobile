@@ -60,7 +60,7 @@
             android:id="@+id/tvDishPrice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="0đ"
+            android:text="$0.00"
             android:textColor="@color/colorPrimary"
             android:textSize="15sp"
             android:textStyle="bold" />

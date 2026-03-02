@@ -197,7 +197,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     }
 
     private String formatCurrency(double amount) {
-        NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
         return format.format(amount);
     }
 

@@ -40,8 +40,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         holder.tvName.setText(item.getName());
         holder.tvCalories.setText((int) item.getCalories() + " kcal");
 
-        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
-        holder.tvPrice.setText(nf.format(item.getPrice()) + "đ");
+        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
+        holder.tvPrice.setText(nf.format(item.getPrice()));
 
         holder.cbSelected.setChecked(item.isSelected());
 

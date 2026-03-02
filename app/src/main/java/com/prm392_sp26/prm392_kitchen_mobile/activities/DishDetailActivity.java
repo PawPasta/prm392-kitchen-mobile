@@ -106,8 +106,8 @@ public class DishDetailActivity extends AppCompatActivity {
         tvName.setText(dish.getName());
         tvDescription.setText(dish.getDescription() != null ? dish.getDescription() : "");
 
-        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
-        tvPrice.setText(nf.format(dish.getPrice()) + "đ");
+        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
+        tvPrice.setText(nf.format(dish.getPrice()));
         tvCalories.setText("🔥 " + (int) dish.getCalories() + " kcal");
 
         // Status badge

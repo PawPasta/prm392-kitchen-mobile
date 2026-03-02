@@ -44,9 +44,9 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
 
         holder.tvName.setText(dish.getName());
 
-        // Format giá: 45000 → "45.000đ"
-        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
-        holder.tvPrice.setText(nf.format(dish.getPrice()) + "đ");
+        // Format price in USD currency.
+        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
+        holder.tvPrice.setText(nf.format(dish.getPrice()));
 
         // Hiện calories + status
         String statusEmoji = getStatusEmoji(dish.getStatus());

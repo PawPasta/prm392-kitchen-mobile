@@ -198,8 +198,9 @@ public class ProfileActivity extends AppCompatActivity {
                                 && response.body().isSuccess() && response.body().getData() != null) {
                             UserWallet wallet = response.body().getData().getWallet();
                             double balance = wallet == null ? 0 : wallet.getBalance();
-                            tvWalletBalance.setText(String.format(Locale.getDefault(),
-                                    "Số dư: %.2f", balance));
+                            String amount = java.text.NumberFormat.getCurrencyInstance(Locale.US)
+                                    .format(balance);
+                            tvWalletBalance.setText("Số dư: " + amount);
                             return;
                         }
 
