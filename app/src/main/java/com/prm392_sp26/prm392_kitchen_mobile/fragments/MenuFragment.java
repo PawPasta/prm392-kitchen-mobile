@@ -34,10 +34,14 @@ import retrofit2.Response;
 public class MenuFragment extends Fragment {
 
     private static final String TAG = "MenuFragment";
+    private static final int PAGE_SIZE = 20;
     private RecyclerView rvMenuDishes;
     private DishAdapter dishAdapter;
     private List<DishResponse> dishList = new ArrayList<>();
     private PrefsManager prefsManager;
+    private int currentPage;
+    private boolean isLoading;
+    private boolean isLastPage;
 
     @Nullable
     @Override
@@ -55,30 +59,62 @@ public class MenuFragment extends Fragment {
         });
         rvMenuDishes.setAdapter(dishAdapter);
 
-        loadAllDishes();
+        setupPagination();
+        currentPage = 0;
+        isLastPage = false;
+        loadAllDishes(0);
 
         return view;
     }
 
-    private void loadAllDishes() {
+    private void setupPagination() {
+        rvMenuDishes.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                if (dy <= 0) {
+                    return;
+                }
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager == null) {
+                    return;
+                }
+                int totalItemCount = layoutManager.getItemCount();
+                int lastVisible = layoutManager.findLastVisibleItemPosition();
+                if (!isLoading && !isLastPage && lastVisible >= totalItemCount - 2) {
+                    loadAllDishes(currentPage + 1);
+                }
+            }
+        });
+    }
+
+    private void loadAllDishes(int page) {
+        if (isLoading || isLastPage) {
+            return;
+        }
+        isLoading = true;
         String token = "Bearer " + prefsManager.getAccessToken();
         ApiService apiService = ApiClient.getInstance().getApiService();
 
-        apiService.getDishes(token, 0, 50).enqueue(new Callback<BaseResponse<PageResponse<DishResponse>>>() {
+        apiService.getDishes(token, page, PAGE_SIZE).enqueue(new Callback<BaseResponse<PageResponse<DishResponse>>>() {
             @Override
             public void onResponse(@NonNull Call<BaseResponse<PageResponse<DishResponse>>> call, 
                                    @NonNull Response<BaseResponse<PageResponse<DishResponse>>> response) {
+                isLoading = false;
                 if (!isAdded()) return;
 
                 if (response.isSuccessful() && response.body() != null) {
                     BaseResponse<PageResponse<DishResponse>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
                         List<DishResponse> dishes = body.getData().getContent();
-                        if (dishes != null && !dishes.isEmpty()) {
+                        if (page == 0) {
                             dishList.clear();
+                        }
+                        if (dishes != null && !dishes.isEmpty()) {
                             dishList.addAll(dishes);
                             dishAdapter.notifyDataSetChanged();
                         }
+                        isLastPage = body.getData().isLast();
+                        currentPage = page;
                     }
                 } else if (response.code() == 401) {
                     // Xử lý refresh token nếu cần, ở đây tạm thời bỏ qua cho đơn giản 
@@ -88,6 +124,7 @@ public class MenuFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Call<BaseResponse<PageResponse<DishResponse>>> call, @NonNull Throwable t) {
+                isLoading = false;
                 if (isAdded()) {
                     Log.e(TAG, "Fail to load menu", t);
                     Toast.makeText(requireContext(), "Không thể tải thực đơn", Toast.LENGTH_SHORT).show();

@@ -6,7 +6,8 @@
     android:orientation="vertical"
     android:background="@color/colorBackground">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/homeScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -145,27 +146,21 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- BANNER -->
-            <androidx.cardview.widget.CardView
+            <!-- BANNER CAROUSEL -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/bannerPager"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="180dp"
                 android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="24dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/colorPrimary">
+                android:layout_marginTop="24dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="24dp">
-
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🔥 Ưu đãi hôm nay" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Giảm 20% cho đơn hàng đầu tiên!\nÁp dụng cho tất cả món ăn" android:textColor="#DDFFFFFF" android:textSize="14sp" android:lineSpacingMultiplier="1.3" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginTop="16dp" android:background="@drawable/bg_category_card" android:gravity="center" android:paddingHorizontal="24dp" android:text="Đặt ngay" android:textColor="@color/colorPrimary" android:textSize="14sp" android:textStyle="bold" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            <LinearLayout
+                android:id="@+id/bannerIndicators"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal" />
 
             <!-- MÓN PHỔ BIẾN -->
             <TextView
@@ -189,6 +184,6 @@
 
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>
