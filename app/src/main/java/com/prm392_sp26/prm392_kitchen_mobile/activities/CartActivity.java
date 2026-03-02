@@ -2,7 +2,6 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,9 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
@@ -25,14 +24,16 @@ import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class OrderHistoryActivity extends AppCompatActivity {
+public class CartActivity extends AppCompatActivity {
+
+    private static final String STATUS_CREATED = "CREATED";
+    private final int pageSize = 10;
 
     private PrefsManager prefsManager;
     private RecyclerView recyclerOrders;
@@ -40,21 +41,18 @@ public class OrderHistoryActivity extends AppCompatActivity {
     private ProgressBar progressLoadMore;
     private TextView tvEmpty;
     private SwipeRefreshLayout swipeRefresh;
-    private LinearLayout chipContainer;
     private OrderHistoryAdapter adapter;
     private boolean isLoading;
     private boolean isLastPage;
     private int currentPage;
-    private final int pageSize = 10;
-    private String selectedStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_order_history);
+        setContentView(R.layout.activity_cart);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.orderHistoryMain), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.cartMain), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
@@ -66,7 +64,6 @@ public class OrderHistoryActivity extends AppCompatActivity {
         progressLoadMore = findViewById(R.id.progressLoadMore);
         tvEmpty = findViewById(R.id.tvEmptyOrders);
         swipeRefresh = findViewById(R.id.swipeRefresh);
-        chipContainer = findViewById(R.id.chipContainer);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -75,14 +72,13 @@ public class OrderHistoryActivity extends AppCompatActivity {
         recyclerOrders.setAdapter(adapter);
         adapter.setOnItemClickListener(this::openOrderDetail);
 
-        setupChips();
         setupRefresh();
         setupPagination();
 
-        loadOrders(0, pageSize, null, false);
+        loadOrders(0, pageSize, false);
     }
 
-    private void loadOrders(int page, int size, String status, boolean isLoadMore) {
+    private void loadOrders(int page, int size, boolean isLoadMore) {
         String token = prefsManager.getAccessToken();
         if (token == null || token.trim().isEmpty()) {
             Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
@@ -92,7 +88,7 @@ public class OrderHistoryActivity extends AppCompatActivity {
         setLoading(true, isLoadMore);
         ApiClient.getInstance()
                 .getApiService()
-                .getOrderHistory("Bearer " + token, page, size, status)
+                .getOrderHistory("Bearer " + token, page, size, STATUS_CREATED)
                 .enqueue(new Callback<BaseResponse<OrderHistoryResponse>>() {
                     @Override
                     public void onResponse(@NonNull Call<BaseResponse<OrderHistoryResponse>> call,
@@ -105,35 +101,34 @@ public class OrderHistoryActivity extends AppCompatActivity {
                                     && baseResponse.getData().getOrders() != null) {
                                 List<OrderHistoryResponse.OrderItem> orders = baseResponse.getData().getOrders()
                                         .getContent();
-                                List<OrderHistoryResponse.OrderItem> visibleOrders = filterOutCreated(orders);
                                 if (page == 0) {
-                                    adapter.setItems(visibleOrders);
+                                    adapter.setItems(orders);
                                 } else {
-                                    adapter.addItems(visibleOrders);
+                                    adapter.addItems(orders);
                                 }
                                 currentPage = baseResponse.getData().getOrders().getPageNumber();
                                 isLastPage = baseResponse.getData().getOrders().isLast();
-                                boolean isEmpty = adapter.getItemCount() == 0;
-                                tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+                                tvEmpty.setVisibility(adapter.getItemCount() == 0
+                                        ? View.VISIBLE
+                                        : View.GONE);
                                 return;
                             }
-                            Toast.makeText(OrderHistoryActivity.this,
+                            Toast.makeText(CartActivity.this,
                                     baseResponse.getMessage() != null ? baseResponse.getMessage()
-                                            : "Không thể tải lịch sử đơn.",
+                                            : "Không thể tải giỏ hàng.",
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
 
-                        Toast.makeText(OrderHistoryActivity.this,
+                        Toast.makeText(CartActivity.this,
                                 "Server error: " + response.code(), Toast.LENGTH_LONG).show();
                     }
 
                     @Override
-                    public void onFailure(@NonNull Call<BaseResponse<OrderHistoryResponse>> call,
-                            @NonNull Throwable t) {
+                    public void onFailure(@NonNull Call<BaseResponse<OrderHistoryResponse>> call, @NonNull Throwable t) {
                         setLoading(false, isLoadMore);
-                        Toast.makeText(OrderHistoryActivity.this,
-                                "Lỗi mạng khi tải lịch sử đơn.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(CartActivity.this,
+                                "Lỗi mạng khi tải giỏ hàng.", Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -155,7 +150,7 @@ public class OrderHistoryActivity extends AppCompatActivity {
         swipeRefresh.setOnRefreshListener(() -> {
             currentPage = 0;
             isLastPage = false;
-            loadOrders(0, pageSize, selectedStatus, false);
+            loadOrders(0, pageSize, false);
         });
     }
 
@@ -173,81 +168,11 @@ public class OrderHistoryActivity extends AppCompatActivity {
                 int totalItemCount = layoutManager.getItemCount();
                 int lastVisible = layoutManager.findLastVisibleItemPosition();
                 if (!isLoading && !isLastPage && lastVisible >= totalItemCount - 2) {
-                    loadOrders(currentPage + 1, pageSize, selectedStatus, true);
+                    loadOrders(currentPage + 1, pageSize, true);
                 }
             }
         });
     }
-
-    private void setupChips() {
-        String[] statuses = new String[] { "ALL", "CONFIRMED", "PROCESSING", "READY", "COMPLETED", "CANCELLED" };
-        for (String status : statuses) {
-            TextView chip = new TextView(this);
-            chip.setText(status.equals("ALL") ? "Tất cả" : status);
-            chip.setTag(status);
-            chip.setTextSize(12f);
-            chip.setTextColor(getResources().getColor(R.color.colorTextPrimary));
-            int paddingH = (int) (12 * getResources().getDisplayMetrics().density);
-            int paddingV = (int) (6 * getResources().getDisplayMetrics().density);
-            chip.setPadding(paddingH, paddingV, paddingH, paddingV);
-
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            params.setMarginEnd((int) (8 * getResources().getDisplayMetrics().density));
-            chip.setLayoutParams(params);
-
-            chip.setBackgroundResource(R.drawable.bg_chip);
-            chip.setOnClickListener(v -> {
-                String tag = (String) v.getTag();
-                selectedStatus = "ALL".equals(tag) ? null : tag;
-                updateChipStyles();
-                currentPage = 0;
-                isLastPage = false;
-                loadOrders(0, pageSize, selectedStatus, false);
-            });
-
-            chipContainer.addView(chip);
-        }
-        updateChipStyles();
-    }
-
-    private void updateChipStyles() {
-        for (int i = 0; i < chipContainer.getChildCount(); i++) {
-            View view = chipContainer.getChildAt(i);
-            if (!(view instanceof TextView)) {
-                continue;
-            }
-            TextView chip = (TextView) view;
-            String tag = (String) chip.getTag();
-            boolean selected = (selectedStatus == null && "ALL".equals(tag))
-                    || (selectedStatus != null && selectedStatus.equals(tag));
-            chip.setBackgroundResource(selected ? R.drawable.bg_chip_selected : R.drawable.bg_chip);
-        }
-    }
-
-    private List<OrderHistoryResponse.OrderItem> filterOutCreated(
-            List<OrderHistoryResponse.OrderItem> orders) {
-        List<OrderHistoryResponse.OrderItem> filtered = new ArrayList<>();
-        if (orders == null || orders.isEmpty()) {
-            return filtered;
-        }
-        for (OrderHistoryResponse.OrderItem item : orders) {
-            if (item == null) {
-                continue;
-            }
-            String status = item.getStatus();
-            if (status == null || status.trim().isEmpty()) {
-                filtered.add(item);
-                continue;
-            }
-            if (!"CREATED".equalsIgnoreCase(status.trim())) {
-                filtered.add(item);
-            }
-        }
-        return filtered;
-    }
-
 
     private void openOrderDetail(OrderHistoryResponse.OrderItem item) {
         String json = new Gson().toJson(item);

@@ -41,6 +41,7 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView etProfileName;
     private ProgressBar progressProfile;
     private View avatarContainer;
+    private View itemCart;
     private View itemOrderHistory;
     private View itemWallet;
     private View walletBalanceContainer;
@@ -69,6 +70,7 @@ public class ProfileActivity extends AppCompatActivity {
         etProfileName = findViewById(R.id.etProfileName);
         progressProfile = findViewById(R.id.progressProfile);
         avatarContainer = findViewById(R.id.avatarContainer);
+        itemCart = findViewById(R.id.itemCart);
         itemOrderHistory = findViewById(R.id.itemOrderHistory);
         itemWallet = findViewById(R.id.itemWallet);
         walletBalanceContainer = findViewById(R.id.walletBalanceContainer);
@@ -76,6 +78,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnLogout).setOnClickListener(v -> performLogout());
+        itemCart.setOnClickListener(v -> navigateToCart());
         itemOrderHistory.setOnClickListener(v -> navigateToOrderHistory());
         itemWallet.setOnClickListener(v -> toggleWalletBalance());
         btnEditProfile.setOnClickListener(v -> toggleEditProfile());
@@ -267,6 +270,11 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void navigateToOrderHistory() {
         Intent intent = new Intent(this, OrderHistoryActivity.class);
+        startActivity(intent);
+    }
+
+    private void navigateToCart() {
+        Intent intent = new Intent(this, CartActivity.class);
         startActivity(intent);
     }
 

@@ -47,6 +47,11 @@
             android:name=".activities.OrderHistoryActivity"
             android:exported="false" />
 
+        <!-- CartActivity - Cart orders (CREATED) -->
+        <activity
+            android:name=".activities.CartActivity"
+            android:exported="false" />
+
         <!-- OrderDetailActivity - Order detail -->
         <activity
             android:name=".activities.OrderDetailActivity"
