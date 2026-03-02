@@ -37,6 +37,17 @@ public class PrefsManager {
     }
 
     /**
+     * Lưu tokens thủ công (dùng cho debug hoặc refresh token)
+     */
+    public void saveTokens(String accessToken, String refreshToken) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(Constants.KEY_ACCESS_TOKEN, accessToken);
+        editor.putString(Constants.KEY_REFRESH_TOKEN, refreshToken);
+        editor.putBoolean(Constants.KEY_IS_LOGGED_IN, true);
+        editor.apply();
+    }
+
+    /**
      * Kiểm tra user đã đăng nhập chưa
      */
     public boolean isLoggedIn() {
