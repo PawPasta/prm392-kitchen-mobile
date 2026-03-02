@@ -37,6 +37,11 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- DishDetailActivity - Chi tiết món ăn -->
+        <activity
+            android:name=".activities.DishDetailActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
