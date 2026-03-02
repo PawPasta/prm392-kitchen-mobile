@@ -24,4 +24,20 @@
     </style>
 
     <style name="Theme.Prm392_kitchen_mobile" parent="Base.Theme.Prm392_kitchen_mobile" />
+
+    <!-- Navbar text styles -->
+    <style name="NavBarTextActive" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="NavBarTextInactive" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">10sp</item>
+    </style>
+
+    <!-- Style cho Indicator (vòng tròn/pill bao quanh icon active) -->
+    <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/colorSecondary</item>
+        <item name="marginHorizontal">4dp</item>
+    </style>
 </resources>
