@@ -77,12 +77,21 @@ public class AuthActivity extends AppCompatActivity {
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
         progressAuth = findViewById(R.id.progressAuth);
         tvStatus = findViewById(R.id.tvStatus);
+        TextView btnDebugBypass = findViewById(R.id.btnDebugBypass);
 
         // Ẩn tvStatus mặc định (chỉ dùng cho trạng thái loading)
         tvStatus.setVisibility(View.GONE);
 
         // Set click listener
         btnGoogleSignIn.setOnClickListener(v -> startGoogleSignIn());
+        
+        btnDebugBypass.setOnClickListener(v -> {
+            Toast.makeText(this, "[DEBUG] Bỏ qua đăng nhập", Toast.LENGTH_SHORT).show();
+            // Lưu token giả để vào được MainActivity
+            prefsManager.saveTokens("dummy_access_token", "dummy_refresh_token");
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        });
     }
 
     /**

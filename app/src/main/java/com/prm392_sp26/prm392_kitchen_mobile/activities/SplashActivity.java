@@ -141,18 +141,11 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void navigateBasedOnLoginStatus() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        boolean isLoggedIn = prefsManager.isLoggedIn();
+        // Luôn yêu cầu đăng nhập mỗi lần mở app
+        FirebaseAuth.getInstance().signOut();
+        prefsManager.clearSession();
 
-        Intent intent;
-        if (currentUser != null && isLoggedIn) {
-            // Đã đăng nhập → đi thẳng đến MainActivity
-            intent = new Intent(this, MainActivity.class);
-        } else {
-            // Chưa đăng nhập → đến AuthActivity
-            intent = new Intent(this, AuthActivity.class);
-        }
-
+        Intent intent = new Intent(this, AuthActivity.class);
         startActivity(intent);
         finish();
     }

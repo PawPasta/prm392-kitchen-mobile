@@ -146,6 +146,19 @@
                     android:textColor="@color/colorTextSecondary"
                     android:textSize="13sp" />
 
+                <!-- ===== DEBUG BYPASS BUTTON ===== -->
+                <TextView
+                    android:id="@+id/btnDebugBypass"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="[Debug] Bỏ qua đăng nhập"
+                    android:textColor="@color/colorTextHint"
+                    android:textSize="12sp"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
