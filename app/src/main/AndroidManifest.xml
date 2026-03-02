@@ -42,6 +42,26 @@
             android:name=".activities.DishDetailActivity"
             android:exported="false" />
 
+        <!-- ProfileActivity - User profile -->
+        <activity
+            android:name=".activities.ProfileActivity"
+            android:exported="false" />
+
+        <!-- OrderHistoryActivity - Order history -->
+        <activity
+            android:name=".activities.OrderHistoryActivity"
+            android:exported="false" />
+
+        <!-- CartActivity - Cart orders (CREATED) -->
+        <activity
+            android:name=".activities.CartActivity"
+            android:exported="false" />
+
+        <!-- OrderDetailActivity - Order detail -->
+        <activity
+            android:name=".activities.OrderDetailActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

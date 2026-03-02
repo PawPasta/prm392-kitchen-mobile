@@ -49,4 +49,8 @@
 
     <!-- === VIỀN CARD === -->
     <color name="cardStroke">#F0F0F0</color>
+
+    <!-- === PROFILE CARD === -->
+    <color name="profileCardStart">#19B394</color>
+    <color name="profileCardEnd">#12A4B5</color>
 </resources>
