@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/createOrderRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- HEADER -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:contentDescription="@string/back"
+                android:src="@drawable/ic_chevron_left"
+                android:tint="@color/colorTextPrimary" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/create_order"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text=""
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <!-- DISH PREVIEW CARD -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@color/colorSurface"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvDishEmoji"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="🍽️"
+                    android:textSize="48sp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvDishName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Tên món"
+                    android:textColor="@color/colorTextPrimary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/tvDishPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="$0.00"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="  •  "
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvDishCalories"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔥 0 kcal"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- QUANTITY SECTION -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/quantity"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnQuantityMinus"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="-"
+                android:textSize="20sp"
+                android:textColor="@color/colorOnPrimary"
+                android:backgroundTint="@color/colorPrimary"
+                style="@style/Widget.AppCompat.Button" />
+
+            <EditText
+                android:id="@+id/etQuantity"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="12dp"
+                android:inputType="number"
+                android:text="1"
+                android:gravity="center"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="16sp"
+                android:background="@color/colorSurfaceVariant"
+                android:textColorHint="@color/colorTextHint" />
+
+            <Button
+                android:id="@+id/btnQuantityPlus"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="+"
+                android:textSize="20sp"
+                android:textColor="@color/colorOnPrimary"
+                android:backgroundTint="@color/colorPrimary"
+                style="@style/Widget.AppCompat.Button" />
+        </LinearLayout>
+
+        <!-- PICKUP DATE AND TIME SECTION -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/pickup_time"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+
+        <EditText
+            android:id="@+id/etPickupDateTime"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
+            android:hint="@string/select_pickup_time"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="14sp"
+            android:textColorHint="@color/colorTextHint"
+            android:background="@color/colorSurfaceVariant"
+            android:inputType="none"
+            android:focusable="false"
+            android:clickable="true" />
+
+        <!-- NOTE SECTION -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/note"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+
+        <EditText
+            android:id="@+id/etNote"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
+            android:hint="@string/note_hint"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="14sp"
+            android:textColorHint="@color/colorTextHint"
+            android:background="@color/colorSurfaceVariant"
+            android:inputType="textMultiLine"
+            android:gravity="top" />
+
+        <!-- SPACER -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="20dp" />
+
+        <!-- LOADING PROGRESS -->
+        <ProgressBar
+            android:id="@+id/progressCreateOrder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
+
+        <!-- CREATE BUTTON -->
+        <Button
+            android:id="@+id/btnCreateOrder"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="@string/create_order_button"
+            android:textColor="@color/colorOnPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_marginTop="12dp"
+            style="@style/Widget.AppCompat.Button.Colored" />
+
+    </LinearLayout>
+
+</ScrollView>
+
