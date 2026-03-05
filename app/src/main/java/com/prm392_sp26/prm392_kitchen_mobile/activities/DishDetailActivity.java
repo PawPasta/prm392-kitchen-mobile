@@ -1,5 +1,6 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -12,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.StepAdapter;
@@ -37,7 +39,8 @@ public class DishDetailActivity extends AppCompatActivity {
 
     private ImageView ivDishImage;
     private TextView tvEmoji, tvName, tvDescription, tvPrice, tvCalories, tvStatus;
-    private TextView btnBack, btnOrder;
+    private TextView btnBack;
+    private MaterialButton btnOrder;
     private RecyclerView rvSteps;
     private StepAdapter stepAdapter;
     private PrefsManager prefsManager;
@@ -66,9 +69,15 @@ public class DishDetailActivity extends AppCompatActivity {
         rvSteps.setLayoutManager(new LinearLayoutManager(this));
 
         btnBack.setOnClickListener(v -> finish());
-        btnOrder.setOnClickListener(v ->
-            Toast.makeText(this, "Chức năng đặt hàng sẽ được thêm sau!", Toast.LENGTH_SHORT).show()
-        );
+        btnOrder.setOnClickListener(v -> {
+            if (dishId != -1) {
+                Intent intent = new Intent(DishDetailActivity.this, CreateOrderActivity.class);
+                intent.putExtra("dishId", dishId);
+                startActivity(intent);
+            } else {
+                Toast.makeText(DishDetailActivity.this, "Không tìm thấy ID món ăn", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         if (dishId != -1) {
             loadDishDetail();

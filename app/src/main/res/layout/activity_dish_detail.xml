@@ -163,19 +163,19 @@
             android:nestedScrollingEnabled="false" />
 
         <!-- NÚT ĐẶT NGAY -->
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnOrder"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginHorizontal="20dp"
             android:layout_marginTop="24dp"
-            android:background="@drawable/bg_rounded_button"
-            android:gravity="center"
-            android:paddingVertical="16dp"
             android:text="🛒 Đặt ngay"
-            android:textColor="@color/white"
+            android:textColor="@color/colorOnPrimary"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:enabled="true"
+            app:backgroundTint="@color/colorPrimary"
+            style="@style/Widget.MaterialComponents.Button" />
 
     </LinearLayout>
 </ScrollView>
