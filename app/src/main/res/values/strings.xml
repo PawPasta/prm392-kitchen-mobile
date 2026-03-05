@@ -1,3 +1,30 @@
 <resources>
     <string name="app_name">prm392_kitchen_mobile</string>
+
+    <!-- Order Management -->
+    <string name="back">Quay lại</string>
+    <string name="create_order">Tạo đơn hàng</string>
+    <string name="quantity">Số lượng</string>
+    <string name="pickup_time">Thời gian nhận</string>
+    <string name="select_pickup_time">Chọn ngày giờ nhận hàng</string>
+    <string name="note">Ghi chú</string>
+    <string name="note_hint">Thêm ghi chú cho đơn hàng (tuỳ chọn)</string>
+    <string name="create_order_button">Tạo đơn hàng</string>
+    <string name="order_history">Lịch sử đơn hàng</string>
+    <string name="order_detail">Chi tiết đơn hàng</string>
+    <string name="cancel_order">Hủy đơn</string>
+    <string name="order_created_success">Đơn hàng được tạo thành công!</string>
+    <string name="order_cancelled_success">Đơn hàng đã được hủy</string>
+    <string name="error_quantity_invalid">Số lượng phải từ 1 đến 10</string>
+    <string name="error_pickup_time_required">Vui lòng chọn thời gian nhận hàng</string>
+    <string name="error_pickup_time_invalid">Thời gian nhận phải sau thời gian hiện tại</string>
+    <string name="empty_order_history">Chưa có đơn hàng</string>
+    <string name="order_status_created">Đã tạo</string>
+    <string name="order_status_confirmed">Đã xác nhận</string>
+    <string name="order_status_processing">Đang chuẩn bị</string>
+    <string name="order_status_ready">Sẵn sàng</string>
+    <string name="order_status_completed">Hoàn thành</string>
+    <string name="order_status_cancelled">Đã hủy</string>
+    <string name="pickup_label">Nhận: %s</string>
+    <string name="discount_label">Giảm: -$%.2f</string>
 </resources>
