@@ -161,37 +161,80 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     }
 
     private void loadStepsAndItems() {
-        // Create steps for custom order
-        steps.add(new DishStepResponse() {
+        String token = "Bearer " + prefsManager.getAccessToken();
+
+        // Lấy tất cả items (bao gồm stepName = nhóm thành phần: carb, protein, sauce...)
+        ApiClient.getInstance()
+                .getApiService()
+                .getAllItems(token, 0, 100)
+                .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
             @Override
-            public int getStepId() { return 1; }
+            public void onResponse(Call<BaseResponse<PageResponse<ItemResponse>>> call, Response<BaseResponse<PageResponse<ItemResponse>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    List<ItemResponse> allItems = response.body().getData().getContent();
+                    if (allItems != null && !allItems.isEmpty()) {
+                        // Nhóm items theo stepName (carb, protein, sauce, etc.)
+                        Map<String, List<ItemResponse>> groupedItems = new HashMap<>();
+                        Map<String, Integer> stepNameToId = new HashMap<>();
+
+                        for (ItemResponse item : allItems) {
+                            String stepName = item.getStepName();
+                            int stepId = item.getStepId();
+
+                            if (stepName != null && !stepName.isEmpty()) {
+                                if (!groupedItems.containsKey(stepName)) {
+                                    groupedItems.put(stepName, new ArrayList<>());
+                                    stepNameToId.put(stepName, stepId);
+                                }
+                                groupedItems.get(stepName).add(item);
+                            }
+                        }
+
+                        // Tạo steps từ groupedItems
+                        steps.clear();
+                        for (Map.Entry<String, Integer> entry : stepNameToId.entrySet()) {
+                            String stepName = entry.getKey();
+                            int stepId = entry.getValue();
+
+                            steps.add(new DishStepResponse() {
+                                @Override
+                                public int getStepId() { return stepId; }
+                                @Override
+                                public String getStepName() { return stepName; }
+                            });
+
+                            // Lưu items cho step này
+                            stepItemsMap.put(stepId, groupedItems.get(stepName));
+                        }
+
+                        // Update spinner
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(CreateCustomOrderActivity.this, android.R.layout.simple_spinner_item);
+                        for (DishStepResponse step : steps) {
+                            adapter.add(step.getStepName());
+                        }
+                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        if (spinnerSteps != null) {
+                            spinnerSteps.setAdapter(adapter);
+                        }
+
+                        // Display items for first step
+                        if (!steps.isEmpty()) {
+                            selectedStep = steps.get(0);
+                            displayItemsForStep(selectedStep.getStepId());
+                        }
+                    } else {
+                        Toast.makeText(CreateCustomOrderActivity.this, "Không có nguyên liệu nào", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(CreateCustomOrderActivity.this, "Lỗi tải danh sách nguyên liệu", Toast.LENGTH_SHORT).show();
+                }
+            }
+
             @Override
-            public String getStepName() { return "Chọn lựa chính"; }
+            public void onFailure(Call<BaseResponse<PageResponse<ItemResponse>>> call, Throwable t) {
+                Toast.makeText(CreateCustomOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
-
-        steps.add(new DishStepResponse() {
-            @Override
-            public int getStepId() { return 2; }
-            @Override
-            public String getStepName() { return "Chọn topping"; }
-        });
-
-
-        // Update spinner
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item);
-        for (DishStepResponse step : steps) {
-            adapter.add(step.getStepName());
-        }
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        if (spinnerSteps != null) {
-            spinnerSteps.setAdapter(adapter);
-        }
-
-        // Load items for first step
-        if (!steps.isEmpty()) {
-            selectedStep = steps.get(0);
-            loadItemsForStep(selectedStep.getStepId());
-        }
     }
 
     private void loadItemsForStep(int stepId) {

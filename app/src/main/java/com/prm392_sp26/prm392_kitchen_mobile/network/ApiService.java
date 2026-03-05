@@ -122,6 +122,91 @@ public interface ApiService {
         @Query("size") int size
     );
 
+    // ==================== ITEM MANAGEMENT APIs ====================
+
+    /**
+     * Lấy tất cả items với phân trang
+     * GET /api/items
+     * Items bao gồm thông tin stepName (nhóm thành phần: carb, protein, sauce, etc.)
+     *
+     * @param authHeader Authorization header dạng "Bearer <token>"
+     * @param page       trang (0-based)
+     * @param size       số phần tử mỗi trang
+     * @return BaseResponse<PageResponse<ItemResponse>> với danh sách items
+     */
+    @GET("api/items")
+    Call<BaseResponse<PageResponse<ItemResponse>>> getAllItems(
+        @Header("Authorization") String authHeader,
+        @Query("page") int page,
+        @Query("size") int size
+    );
+
+    /**
+     * Lấy thông tin chi tiết của một item theo ID
+     * GET /api/items/{itemId}
+     *
+     * @param authHeader Authorization header dạng "Bearer <token>"
+     * @param itemId     ID của item
+     * @return BaseResponse<ItemResponse>
+     */
+    @GET("api/items/{itemId}")
+    Call<BaseResponse<ItemResponse>> getItemById(
+        @Header("Authorization") String authHeader,
+        @Path("itemId") int itemId
+    );
+
+    /**
+     * Lấy thông tin chi tiết của item bao gồm cả nutrients
+     * GET /api/items/{itemId}/detail
+     *
+     * @param authHeader Authorization header dạng "Bearer <token>"
+     * @param itemId     ID của item
+     * @return BaseResponse<ItemDetailResponse> (bao gồm nutrients)
+     */
+    @GET("api/items/{itemId}/detail")
+    Call<BaseResponse<ItemResponse>> getItemDetailWithNutrients(
+        @Header("Authorization") String authHeader,
+        @Path("itemId") int itemId
+    );
+
+    /**
+     * Tìm kiếm items theo tên
+     * GET /api/items/search
+     *
+     * @param authHeader Authorization header dạng "Bearer <token>"
+     * @param name       Tên item cần tìm
+     * @param page       trang (0-based)
+     * @param size       số phần tử mỗi trang
+     * @return BaseResponse<PageResponse<ItemResponse>>
+     */
+    @GET("api/items/search")
+    Call<BaseResponse<PageResponse<ItemResponse>>> searchItemsByName(
+        @Header("Authorization") String authHeader,
+        @Query("name") String name,
+        @Query("page") int page,
+        @Query("size") int size
+    );
+
+    /**
+     * Lấy items theo trạng thái (ENABLE, DISABLE, EXPIRED)
+     * GET /api/items/status/{status}
+     *
+     * @param authHeader Authorization header dạng "Bearer <token>"
+     * @param status     ENABLE, DISABLE, hoặc EXPIRED
+     * @param page       trang (0-based)
+     * @param size       số phần tử mỗi trang
+     * @return BaseResponse<PageResponse<ItemResponse>>
+     */
+    @GET("api/items/status/{status}")
+    Call<BaseResponse<PageResponse<ItemResponse>>> getItemsByStatus(
+        @Header("Authorization") String authHeader,
+        @Path("status") String status,
+        @Query("page") int page,
+        @Query("size") int size
+    );
+
+    // ==================== ORDER MANAGEMENT APIs ====================
+
     /**
      * Tạo đơn hàng từ một dish có sẵn
      * POST /api/orders/from-dish
