@@ -111,6 +111,18 @@ public interface ApiService {
     );
 
     /**
+     * Lấy items theo step (không cần dishId)
+     * GET /api/items/step/{stepId}
+     */
+    @GET("api/items/step/{stepId}")
+    Call<BaseResponse<PageResponse<ItemResponse>>> getItemsByStep(
+        @Header("Authorization") String token,
+        @Path("stepId") int stepId,
+        @Query("page") int page,
+        @Query("size") int size
+    );
+
+    /**
      * Tạo đơn hàng từ một dish có sẵn
      * POST /api/orders/from-dish
      *

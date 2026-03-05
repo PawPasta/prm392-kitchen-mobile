@@ -146,6 +146,20 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
+            <!-- CUSTOM ORDER BUTTON -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreateCustomOrder"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="20dp"
+                android:text="🛠️ Tạo món tùy chỉnh"
+                android:textColor="@color/colorOnPrimary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/colorSecondary"
+                style="@style/Widget.MaterialComponents.Button" />
+
             <!-- BANNER CAROUSEL -->
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/bannerPager"

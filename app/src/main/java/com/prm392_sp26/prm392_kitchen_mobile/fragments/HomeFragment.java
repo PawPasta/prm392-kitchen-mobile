@@ -93,6 +93,14 @@ public class HomeFragment extends Fragment {
         // Logic
         displayUserInfo();
         avatarPlaceholder.setOnClickListener(v -> navigateToProfile());
+
+        // Custom order button
+        view.findViewById(R.id.btnCreateCustomOrder).setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(),
+                com.prm392_sp26.prm392_kitchen_mobile.activities.CreateCustomOrderActivity.class);
+            startActivity(intent);
+        });
+
         setupBanner();
         setupLazyLoading();
         currentPage = 0;

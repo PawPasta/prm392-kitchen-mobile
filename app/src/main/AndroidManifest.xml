@@ -48,6 +48,16 @@
             android:name=".activities.ProfileActivity"
             android:exported="false" />
 
+        <!-- CreateOrderActivity - Tạo đơn hàng từ dish -->
+        <activity
+            android:name=".activities.CreateOrderActivity"
+            android:exported="false" />
+
+        <!-- CreateCustomOrderActivity - Tạo đơn hàng custom -->
+        <activity
+            android:name=".activities.CreateCustomOrderActivity"
+            android:exported="false" />
+
         <!-- OrderHistoryActivity - Order history -->
         <activity
             android:name=".activities.OrderHistoryActivity"
