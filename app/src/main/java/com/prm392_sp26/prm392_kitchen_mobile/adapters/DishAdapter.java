@@ -3,11 +3,14 @@ package com.prm392_sp26.prm392_kitchen_mobile.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 
@@ -52,9 +55,19 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
         String statusEmoji = getStatusEmoji(dish.getStatus());
         holder.tvInfo.setText("🔥 " + (int) dish.getCalories() + " kcal  •  " + statusEmoji);
 
-        // Chọn emoji icon dựa theo tên món
-        holder.tvIcon.setText(getDishEmoji(dish.getName()));
-
+        String imageUrl = dish.getImageUrl();
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            holder.ivDishImage.setVisibility(View.GONE);
+            holder.tvIcon.setVisibility(View.VISIBLE);
+            holder.tvIcon.setText(getDishEmoji(dish.getName()));
+        } else {
+            holder.tvIcon.setVisibility(View.GONE);
+            holder.ivDishImage.setVisibility(View.VISIBLE);
+            Glide.with(holder.itemView)
+                .load(imageUrl.trim())
+                .centerCrop()
+                .into(holder.ivDishImage);
+        }
         // Click vào món → gọi listener
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onDishClick(dish);
@@ -95,10 +108,12 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
     }
 
     static class DishViewHolder extends RecyclerView.ViewHolder {
+        final ImageView ivDishImage;
         final TextView tvIcon, tvName, tvInfo, tvPrice;
 
         DishViewHolder(@NonNull View itemView) {
             super(itemView);
+            ivDishImage = itemView.findViewById(R.id.ivDishImage);
             tvIcon = itemView.findViewById(R.id.tvDishIcon);
             tvName = itemView.findViewById(R.id.tvDishName);
             tvInfo = itemView.findViewById(R.id.tvDishInfo);

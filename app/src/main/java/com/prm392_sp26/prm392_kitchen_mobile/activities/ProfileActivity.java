@@ -3,6 +3,7 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,6 +16,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
@@ -37,6 +39,7 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvProfileInitials;
     private TextView tvProfileName;
     private TextView tvProfileEmail;
+    private ImageView ivProfileAvatar;
     private TextView btnEditProfile;
     private TextView etProfileName;
     private ProgressBar progressProfile;
@@ -66,6 +69,7 @@ public class ProfileActivity extends AppCompatActivity {
         tvProfileInitials = findViewById(R.id.tvProfileInitials);
         tvProfileName = findViewById(R.id.tvProfileName);
         tvProfileEmail = findViewById(R.id.tvProfileEmail);
+        ivProfileAvatar = findViewById(R.id.ivProfileAvatar);
         btnEditProfile = findViewById(R.id.btnEditProfile);
         etProfileName = findViewById(R.id.etProfileName);
         progressProfile = findViewById(R.id.progressProfile);
@@ -137,10 +141,23 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         String email = profile.getEmail() == null ? "" : profile.getEmail();
+        String imageUrl = profile.getImageUrl();
 
         tvProfileName.setText(displayName);
         tvProfileEmail.setText(email);
-        tvProfileInitials.setText(getInitials(displayName));
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            ivProfileAvatar.setImageDrawable(null);
+            ivProfileAvatar.setVisibility(View.GONE);
+            tvProfileInitials.setVisibility(View.VISIBLE);
+            tvProfileInitials.setText(getInitials(displayName));
+        } else {
+            tvProfileInitials.setVisibility(View.GONE);
+            ivProfileAvatar.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                .load(imageUrl.trim())
+                .centerCrop()
+                .into(ivProfileAvatar);
+        }
         if (!isEditingProfile) {
             etProfileName.setText(displayName);
             tvProfileName.setVisibility(View.VISIBLE);

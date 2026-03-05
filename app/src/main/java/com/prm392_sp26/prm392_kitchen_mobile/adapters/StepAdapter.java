@@ -53,7 +53,7 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
 
         List<ItemResponse> items = itemsMap.get(step.getStepId());
         if (items != null && !items.isEmpty()) {
-            ItemAdapter itemAdapter = new ItemAdapter(items, step.getMaxSelect());
+            ItemAdapter itemAdapter = new ItemAdapter(items);
             holder.rvItems.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext()));
             holder.rvItems.setAdapter(itemAdapter);
             holder.rvItems.setVisibility(View.VISIBLE);

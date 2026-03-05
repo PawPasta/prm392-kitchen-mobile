@@ -16,15 +16,30 @@
         android:gravity="center_vertical"
         android:padding="16dp">
 
-        <!-- Icon/Emoji placeholder cho món ăn -->
-        <TextView
-            android:id="@+id/tvDishIcon"
+        <!-- Image/Emoji placeholder cho món ăn -->
+        <FrameLayout
             android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:gravity="center"
-            android:text="🍽️"
-            android:textSize="32sp"
-            android:background="@drawable/bg_search_bar" />
+            android:layout_height="56dp">
+
+            <ImageView
+                android:id="@+id/ivDishImage"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_search_bar"
+                android:clipToOutline="true"
+                android:contentDescription=""
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvDishIcon"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:gravity="center"
+                android:text="🍽️"
+                android:textSize="32sp"
+                android:background="@drawable/bg_search_bar" />
+        </FrameLayout>
 
         <!-- Thông tin món -->
         <LinearLayout

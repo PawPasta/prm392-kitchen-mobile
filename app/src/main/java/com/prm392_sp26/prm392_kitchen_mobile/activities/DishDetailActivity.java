@@ -2,6 +2,8 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -10,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.StepAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishDetailResponse;
@@ -32,6 +35,7 @@ public class DishDetailActivity extends AppCompatActivity {
 
     private static final String TAG = "DishDetailActivity";
 
+    private ImageView ivDishImage;
     private TextView tvEmoji, tvName, tvDescription, tvPrice, tvCalories, tvStatus;
     private TextView btnBack, btnOrder;
     private RecyclerView rvSteps;
@@ -49,6 +53,7 @@ public class DishDetailActivity extends AppCompatActivity {
 
         // Bind views
         tvEmoji = findViewById(R.id.tvDishEmoji);
+        ivDishImage = findViewById(R.id.ivDishImage);
         tvName = findViewById(R.id.tvDishName);
         tvDescription = findViewById(R.id.tvDishDescription);
         tvPrice = findViewById(R.id.tvDishPrice);
@@ -105,6 +110,18 @@ public class DishDetailActivity extends AppCompatActivity {
     private void displayDish(DishDetailResponse dish) {
         tvName.setText(dish.getName());
         tvDescription.setText(dish.getDescription() != null ? dish.getDescription() : "");
+        String imageUrl = dish.getImageUrl();
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            ivDishImage.setVisibility(View.GONE);
+            tvEmoji.setVisibility(View.VISIBLE);
+        } else {
+            tvEmoji.setVisibility(View.GONE);
+            ivDishImage.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                .load(imageUrl.trim())
+                .centerCrop()
+                .into(ivDishImage);
+        }
 
         NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
         tvPrice.setText(nf.format(dish.getPrice()));
