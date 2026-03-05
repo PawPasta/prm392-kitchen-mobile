@@ -130,31 +130,48 @@ public class CreateOrderActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        btnBack.setOnClickListener(v -> finish());
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
-        btnQuantityPlus.setOnClickListener(v -> {
-            if (quantity < 10) {
-                quantity++;
-                etQuantity.setText(String.valueOf(quantity));
-            }
-        });
+        if (btnQuantityPlus != null) {
+            btnQuantityPlus.setOnClickListener(v -> {
+                if (quantity < 10) {
+                    quantity++;
+                    if (etQuantity != null) {
+                        etQuantity.setText(String.valueOf(quantity));
+                    }
+                }
+            });
+        }
 
-        btnQuantityMinus.setOnClickListener(v -> {
-            if (quantity > 1) {
-                quantity--;
-                etQuantity.setText(String.valueOf(quantity));
-            }
-        });
+        if (btnQuantityMinus != null) {
+            btnQuantityMinus.setOnClickListener(v -> {
+                if (quantity > 1) {
+                    quantity--;
+                    if (etQuantity != null) {
+                        etQuantity.setText(String.valueOf(quantity));
+                    }
+                }
+            });
+        }
 
-        etQuantity.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                updateQuantityFromEditText();
-            }
-        });
+        if (etQuantity != null) {
+            etQuantity.setOnFocusChangeListener((v, hasFocus) -> {
+                if (!hasFocus) {
+                    updateQuantityFromEditText();
+                }
+            });
+        }
 
-        etPickupDateTime.setOnClickListener(v -> showDateTimePicker());
+        if (etPickupDateTime != null) {
+            etPickupDateTime.setOnClickListener(v -> showDateTimePicker());
+        }
 
-        btnCreateOrder.setOnClickListener(v -> createOrder());
+        if (btnCreateOrder != null) {
+            btnCreateOrder.setOnClickListener(v -> createOrder());
+            btnCreateOrder.setEnabled(true);
+        }
     }
 
     private void updateQuantityFromEditText() {
@@ -206,20 +223,32 @@ public class CreateOrderActivity extends AppCompatActivity {
     }
 
     private void createOrder() {
+        // Đảm bảo button được enable
+        if (btnCreateOrder != null) {
+            btnCreateOrder.setEnabled(true);
+        }
+
         updateQuantityFromEditText();
 
-        // Validation
+        // Validation: Kiểm tra số lượng
         if (quantity < 1 || quantity > 10) {
-            Toast.makeText(this, R.string.error_quantity_invalid, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Số lượng phải từ 1 đến 10", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Validation: Kiểm tra thời gian lấy
         if (selectedPickupDateTime == null || selectedPickupDateTime.isEmpty()) {
-            Toast.makeText(this, R.string.error_pickup_time_required, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Vui lòng chọn thời gian lấy món", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String note = etNote.getText().toString().trim();
+        // Validation: Kiểm tra dishId
+        if (dishId <= 0) {
+            Toast.makeText(this, "Lỗi: Không tìm thấy ID món ăn", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String note = etNote != null ? etNote.getText().toString().trim() : "";
 
         CreateOrderFromDishRequest request = new CreateOrderFromDishRequest(
                 dishId,
@@ -228,8 +257,13 @@ public class CreateOrderActivity extends AppCompatActivity {
                 note
         );
 
-        progressCreateOrder.setVisibility(android.view.View.VISIBLE);
-        btnCreateOrder.setEnabled(false);
+        // Show loading state
+        if (progressCreateOrder != null) {
+            progressCreateOrder.setVisibility(android.view.View.VISIBLE);
+        }
+        if (btnCreateOrder != null) {
+            btnCreateOrder.setEnabled(false);
+        }
 
         String token = "Bearer " + PrefsManager.getInstance(this).getAccessToken();
 
@@ -239,22 +273,36 @@ public class CreateOrderActivity extends AppCompatActivity {
                 .enqueue(new Callback<BaseResponse<OrderResponse>>() {
             @Override
             public void onResponse(Call<BaseResponse<OrderResponse>> call, Response<BaseResponse<OrderResponse>> response) {
-                progressCreateOrder.setVisibility(android.view.View.GONE);
-                btnCreateOrder.setEnabled(true);
+                // Hide loading state
+                if (progressCreateOrder != null) {
+                    progressCreateOrder.setVisibility(android.view.View.GONE);
+                }
+                if (btnCreateOrder != null) {
+                    btnCreateOrder.setEnabled(true);
+                }
 
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    Toast.makeText(CreateOrderActivity.this, R.string.order_created_success, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CreateOrderActivity.this, "Đặt món thành công!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    Toast.makeText(CreateOrderActivity.this, "Lỗi tạo đơn hàng", Toast.LENGTH_SHORT).show();
+                    String errorMsg = "Lỗi tạo đơn hàng";
+                    if (response.body() != null && response.body().getMessage() != null) {
+                        errorMsg = response.body().getMessage();
+                    }
+                    Toast.makeText(CreateOrderActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<BaseResponse<OrderResponse>> call, Throwable t) {
-                progressCreateOrder.setVisibility(android.view.View.GONE);
-                btnCreateOrder.setEnabled(true);
-                Toast.makeText(CreateOrderActivity.this, "Lỗi: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                // Hide loading state
+                if (progressCreateOrder != null) {
+                    progressCreateOrder.setVisibility(android.view.View.GONE);
+                }
+                if (btnCreateOrder != null) {
+                    btnCreateOrder.setEnabled(true);
+                }
+                Toast.makeText(CreateOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

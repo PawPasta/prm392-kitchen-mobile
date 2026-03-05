@@ -27,7 +27,7 @@
                 android:padding="8dp"
                 android:contentDescription="@string/back"
                 android:src="@drawable/ic_chevron_left"
-                android:tint="@color/colorTextPrimary" />
+                app:tint="@color/colorTextPrimary" />
 
             <TextView
                 android:layout_width="0dp"
@@ -132,15 +132,19 @@
             android:gravity="center_vertical"
             android:layout_marginTop="8dp">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnQuantityMinus"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:text="-"
                 android:textSize="20sp"
                 android:textColor="@color/colorOnPrimary"
-                android:backgroundTint="@color/colorPrimary"
-                style="@style/Widget.AppCompat.Button" />
+                android:insetBottom="0dp"
+                android:insetTop="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:backgroundTint="@color/colorPrimary"
+                style="@style/Widget.MaterialComponents.Button" />
 
             <EditText
                 android:id="@+id/etQuantity"
@@ -156,15 +160,19 @@
                 android:background="@color/colorSurfaceVariant"
                 android:textColorHint="@color/colorTextHint" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnQuantityPlus"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:text="+"
                 android:textSize="20sp"
                 android:textColor="@color/colorOnPrimary"
-                android:backgroundTint="@color/colorPrimary"
-                style="@style/Widget.AppCompat.Button" />
+                android:insetBottom="0dp"
+                android:insetTop="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:backgroundTint="@color/colorPrimary"
+                style="@style/Widget.MaterialComponents.Button" />
         </LinearLayout>
 
         <!-- PICKUP DATE AND TIME SECTION -->
@@ -233,7 +241,7 @@
             android:visibility="gone" />
 
         <!-- CREATE BUTTON -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCreateOrder"
             android:layout_width="match_parent"
             android:layout_height="52dp"
@@ -241,9 +249,10 @@
             android:textColor="@color/colorOnPrimary"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:backgroundTint="@color/colorPrimary"
             android:layout_marginTop="12dp"
-            style="@style/Widget.AppCompat.Button.Colored" />
+            android:enabled="true"
+            app:backgroundTint="@color/colorPrimary"
+            style="@style/Widget.MaterialComponents.Button" />
 
     </LinearLayout>
 
