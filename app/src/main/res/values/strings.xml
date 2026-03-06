@@ -27,4 +27,11 @@
     <string name="order_status_cancelled">Đã hủy</string>
     <string name="pickup_label">Nhận: %s</string>
     <string name="discount_label">Giảm: -$%.2f</string>
+
+    <!-- Create Custom Order -->
+    <string name="select_date">Chọn ngày</string>
+    <string name="select_time">Chọn giờ</string>
+    <string name="select_ingredients">Chọn nguyên liệu</string>
+    <string name="error_no_ingredients">Vui lòng chọn ít nhất một nguyên liệu</string>
+    <string name="error_no_pickup_time">Vui lòng chọn thời gian nhận</string>
 </resources>
