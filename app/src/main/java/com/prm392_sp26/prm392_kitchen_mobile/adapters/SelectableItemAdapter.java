@@ -65,8 +65,15 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
                 .into(holder.ivItemImage);
         }
 
+        // Disable item nếu không phải ENABLE
+        boolean isEnabled = "ENABLE".equals(item.getStatus());
+        holder.itemView.setAlpha(isEnabled ? 1.0f : 0.4f);
+        holder.cbSelect.setEnabled(isEnabled);
+
         // Set checked state
-        boolean isSelected = selectedQuantities.containsKey(item.getItemId());
+        boolean isSelected = isEnabled && selectedQuantities.containsKey(item.getItemId());
+        // Tạm bỏ listener để tránh trigger khi set checked bằng code
+        holder.cbSelect.setOnCheckedChangeListener(null);
         holder.cbSelect.setChecked(isSelected);
 
         // Show/hide quantity and note fields based on selection
@@ -80,8 +87,9 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
             holder.etNote.setVisibility(View.GONE);
         }
 
-        // Handle checkbox change
+        // Handle checkbox change — chỉ cho phép nếu item ENABLE
         holder.cbSelect.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!isEnabled) return;
             if (isChecked) {
                 selectedQuantities.put(item.getItemId(), item.getBaseQuantity());
                 selectedNotes.put(item.getItemId(), "");

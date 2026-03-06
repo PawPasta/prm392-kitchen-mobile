@@ -24,9 +24,15 @@ import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
+import android.content.Intent;
+import android.util.Log;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.TimeZone;
+
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -55,7 +61,8 @@ public class CreateOrderActivity extends AppCompatActivity {
     private ProgressBar progressCreateOrder;
     private ImageView btnBack;
 
-    private final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+    // UTC format — 'Z' suffix chỉ hợp lệ khi formatter dùng UTC timezone
+    private SimpleDateFormat dateTimeFormat;
     private final SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
 
     @Override
@@ -63,6 +70,10 @@ public class CreateOrderActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_order);
+
+        // Khởi tạo formatter UTC để pickupAt luôn đúng chuẩn ISO 8601 UTC
+        dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        dateTimeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.createOrderRoot), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -284,12 +295,18 @@ public class CreateOrderActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     Toast.makeText(CreateOrderActivity.this, "Đặt món thành công!", Toast.LENGTH_SHORT).show();
                     finish();
+                } else if (response.code() == 401) {
+                    // Token hết hạn → thử refresh rồi order lại
+                    refreshTokenAndRetry(() -> createOrder());
                 } else {
-                    String errorMsg = "Lỗi tạo đơn hàng";
+                    String errorMsg = "Lỗi tạo đơn hàng (HTTP " + response.code() + ")";
                     if (response.body() != null && response.body().getMessage() != null) {
                         errorMsg = response.body().getMessage();
+                    } else if (response.errorBody() != null) {
+                        try { errorMsg = response.errorBody().string(); } catch (Exception ignored) {}
                     }
-                    Toast.makeText(CreateOrderActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                    Log.e("CreateOrderActivity", "createOrderFromDish error: " + errorMsg);
+                    Toast.makeText(CreateOrderActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -302,9 +319,49 @@ public class CreateOrderActivity extends AppCompatActivity {
                 if (btnCreateOrder != null) {
                     btnCreateOrder.setEnabled(true);
                 }
+                Log.e("CreateOrderActivity", "createOrderFromDish failure", t);
                 Toast.makeText(CreateOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * Thử refresh access token bằng refreshToken đã lưu.
+     * Nếu thành công → gọi onSuccess (thường là retry createOrder).
+     * Nếu thất bại → yêu cầu đăng nhập lại.
+     */
+    private void refreshTokenAndRetry(Runnable onSuccess) {
+        String refreshToken = PrefsManager.getInstance(this).getRefreshToken();
+        if (refreshToken == null) {
+            Toast.makeText(this, "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            navigateToLogin();
+            return;
+        }
+        ApiClient.getInstance().getApiService()
+            .refreshToken(new RefreshTokenRequest(refreshToken))
+            .enqueue(new Callback<BaseResponse<LoginResponse>>() {
+                @Override
+                public void onResponse(Call<BaseResponse<LoginResponse>> call, Response<BaseResponse<LoginResponse>> res) {
+                    if (res.isSuccessful() && res.body() != null && res.body().isSuccess()) {
+                        PrefsManager.getInstance(CreateOrderActivity.this).saveLoginResponse(res.body().getData());
+                        onSuccess.run();
+                    } else {
+                        Toast.makeText(CreateOrderActivity.this, "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+                        navigateToLogin();
+                    }
+                }
+                @Override
+                public void onFailure(Call<BaseResponse<LoginResponse>> call, Throwable t) {
+                    Toast.makeText(CreateOrderActivity.this, "Lỗi xác thực: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(this, AuthActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }
 

@@ -4,13 +4,13 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,6 +32,8 @@ import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
+import android.content.Intent;
+import android.util.Log;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -39,6 +41,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
+
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -53,7 +59,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     // Views
     private ImageView btnBack;
-    private Spinner spinnerSteps;
+    private ChipGroup chipGroupSteps;
     private RecyclerView rvItems;
     private EditText etQuantity, etPickupDateTime, etNote;
     private MaterialButton btnQuantityPlus, btnQuantityMinus, btnCreateOrder;
@@ -64,7 +70,8 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     private String selectedPickupDateTime = "";
     private List<DishStepResponse> steps = new ArrayList<>();
     private DishStepResponse selectedStep = null;
-    private SelectableItemAdapter itemAdapter;
+    // One persistent adapter per stepId so selections survive when switching steps
+    private Map<Integer, SelectableItemAdapter> stepAdapterMap = new HashMap<>();
     private Map<Integer, List<ItemResponse>> stepItemsMap = new HashMap<>();
     private PrefsManager prefsManager;
 
@@ -88,7 +95,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     private void initializeViews() {
         btnBack = findViewById(R.id.btnBack);
-        spinnerSteps = findViewById(R.id.spinnerSteps);
+        chipGroupSteps = findViewById(R.id.chipGroupSteps);
         rvItems = findViewById(R.id.rvItems);
         etQuantity = findViewById(R.id.etQuantity);
         etPickupDateTime = findViewById(R.id.etPickupDateTime);
@@ -140,16 +147,19 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             etPickupDateTime.setOnClickListener(v -> showDateTimePicker());
         }
 
-        if (spinnerSteps != null) {
-            spinnerSteps.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    selectedStep = steps.get(position);
-                    displayItemsForStep(selectedStep.getStepId());
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
+        // ChipGroup listener — xử lý khi chip được chọn
+        if (chipGroupSteps != null) {
+            chipGroupSteps.setOnCheckedStateChangeListener((group, checkedIds) -> {
+                if (checkedIds.isEmpty()) return;
+                int checkedId = checkedIds.get(0);
+                // tag của Chip là index trong steps
+                Chip chip = group.findViewById(checkedId);
+                if (chip != null && chip.getTag() instanceof Integer) {
+                    int idx = (Integer) chip.getTag();
+                    if (idx >= 0 && idx < steps.size()) {
+                        selectedStep = steps.get(idx);
+                        displayItemsForStep(selectedStep.getStepId());
+                    }
                 }
             });
         }
@@ -181,6 +191,9 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                             String stepName = item.getStepName();
                             int stepId = item.getStepId();
 
+                            // Bỏ qua item DISABLE / EXPIRED — không đưa vào danh sách chọn
+                            if (!"ENABLE".equals(item.getStatus())) continue;
+
                             if (stepName != null && !stepName.isEmpty()) {
                                 if (!groupedItems.containsKey(stepName)) {
                                     groupedItems.put(stepName, new ArrayList<>());
@@ -207,14 +220,21 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                             stepItemsMap.put(stepId, groupedItems.get(stepName));
                         }
 
-                        // Update spinner
-                        ArrayAdapter<String> adapter = new ArrayAdapter<>(CreateCustomOrderActivity.this, android.R.layout.simple_spinner_item);
-                        for (DishStepResponse step : steps) {
-                            adapter.add(step.getStepName());
-                        }
-                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                        if (spinnerSteps != null) {
-                            spinnerSteps.setAdapter(adapter);
+                        // Build chip tabs
+                        if (chipGroupSteps != null) {
+                            chipGroupSteps.removeAllViews();
+                            for (int i = 0; i < steps.size(); i++) {
+                                Chip chip = new Chip(CreateCustomOrderActivity.this);
+                                chip.setText(steps.get(i).getStepName());
+                                chip.setTag(i);
+                                chip.setCheckable(true);
+                                chip.setCheckedIconVisible(false);
+                                chip.setChipStrokeWidth(2f);
+                                chip.setTextSize(13f);
+                                chip.setId(View.generateViewId());
+                                chipGroupSteps.addView(chip);
+                                if (i == 0) chip.setChecked(true);
+                            }
                         }
 
                         // Display items for first step
@@ -267,9 +287,14 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     private void displayItemsForStep(int stepId) {
         List<ItemResponse> items = stepItemsMap.getOrDefault(stepId, new ArrayList<>());
-        itemAdapter = new SelectableItemAdapter(items);
+        // Reuse existing adapter so selections are preserved when switching steps
+        SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
+        if (adapter == null) {
+            adapter = new SelectableItemAdapter(items);
+            stepAdapterMap.put(stepId, adapter);
+        }
         if (rvItems != null) {
-            rvItems.setAdapter(itemAdapter);
+            rvItems.setAdapter(adapter);
         }
     }
 
@@ -300,6 +325,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                                 calendar.set(Calendar.MINUTE, minute);
 
                                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                                sdf.setTimeZone(TimeZone.getTimeZone("UTC")); // gửi UTC, không phải local time
                                 selectedPickupDateTime = sdf.format(calendar.getTime());
                                 if (etPickupDateTime != null) {
                                     SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
@@ -331,37 +357,36 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             return;
         }
 
-        if (itemAdapter == null || itemAdapter.getSelectedItemIds().isEmpty()) {
+        // Collect selections from ALL steps
+        List<CreateCustomOrderRequest.Step> stepsList = new ArrayList<>();
+        for (DishStepResponse step : steps) {
+            int stepId = step.getStepId();
+            SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
+            if (adapter == null) continue;
+
+            List<Integer> selectedItemIds = adapter.getSelectedItemIds();
+            if (selectedItemIds.isEmpty()) continue;
+
+            Map<Integer, Double> quantities = adapter.getSelectedQuantities();
+            Map<Integer, String> notes = adapter.getSelectedNotes();
+
+            List<CreateCustomOrderRequest.Item> itemsList = new ArrayList<>();
+            for (Integer itemId : selectedItemIds) {
+                double qty = quantities.getOrDefault(itemId, 1.0);
+                String itemNote = notes.getOrDefault(itemId, "");
+                itemsList.add(new CreateCustomOrderRequest.Item(itemId, qty, itemNote));
+            }
+
+            stepsList.add(new CreateCustomOrderRequest.Step(stepId, selectedItemIds, itemsList));
+        }
+
+        if (stepsList.isEmpty()) {
             Toast.makeText(this, "Vui lòng chọn ít nhất một nguyên liệu", Toast.LENGTH_SHORT).show();
             return;
         }
 
         String note = etNote != null ? etNote.getText().toString().trim() : "";
 
-        // Build custom dish request
-        List<CreateCustomOrderRequest.Step> stepsList = new ArrayList<>();
-
-        // Collect selected items from adapter
-        Map<Integer, Double> quantities = itemAdapter.getSelectedQuantities();
-        Map<Integer, String> notes = itemAdapter.getSelectedNotes();
-        List<Integer> selectedItemIds = itemAdapter.getSelectedItemIds();
-
-        // Create step with selected items
-        List<CreateCustomOrderRequest.Item> itemsList = new ArrayList<>();
-        for (Integer itemId : selectedItemIds) {
-            double qty = quantities.getOrDefault(itemId, 1.0);
-            String itemNote = notes.getOrDefault(itemId, "");
-            itemsList.add(new CreateCustomOrderRequest.Item(itemId, qty, itemNote));
-        }
-
-        CreateCustomOrderRequest.Step step = new CreateCustomOrderRequest.Step(
-                selectedStep != null ? selectedStep.getStepId() : 1,
-                selectedItemIds,
-                itemsList
-        );
-        stepsList.add(step);
-
-        // Create custom dish
         CreateCustomOrderRequest.CustomDish customDish = new CreateCustomOrderRequest.CustomDish(
                 "Custom Dish",
                 "Tùy chỉnh bởi người dùng",
@@ -402,12 +427,17 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     Toast.makeText(CreateCustomOrderActivity.this, "Đặt món custom thành công!", Toast.LENGTH_SHORT).show();
                     finish();
+                } else if (response.code() == 401) {
+                    refreshTokenAndRetry(() -> createOrder());
                 } else {
-                    String errorMsg = "Lỗi tạo đơn hàng";
+                    String errorMsg = "Lỗi tạo đơn hàng (HTTP " + response.code() + ")";
                     if (response.body() != null && response.body().getMessage() != null) {
                         errorMsg = response.body().getMessage();
+                    } else if (response.errorBody() != null) {
+                        try { errorMsg = response.errorBody().string(); } catch (Exception ignored) {}
                     }
-                    Toast.makeText(CreateCustomOrderActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                    Log.e("CreateCustomOrderActivity", "createCustomOrder error: " + errorMsg);
+                    Toast.makeText(CreateCustomOrderActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -419,9 +449,44 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                 if (btnCreateOrder != null) {
                     btnCreateOrder.setEnabled(true);
                 }
+                Log.e("CreateCustomOrderActivity", "createCustomOrder failure", t);
                 Toast.makeText(CreateCustomOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void refreshTokenAndRetry(Runnable onSuccess) {
+        String refreshToken = prefsManager.getRefreshToken();
+        if (refreshToken == null) {
+            Toast.makeText(this, "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            navigateToLogin();
+            return;
+        }
+        ApiClient.getInstance().getApiService()
+            .refreshToken(new RefreshTokenRequest(refreshToken))
+            .enqueue(new Callback<BaseResponse<LoginResponse>>() {
+                @Override
+                public void onResponse(Call<BaseResponse<LoginResponse>> call, Response<BaseResponse<LoginResponse>> res) {
+                    if (res.isSuccessful() && res.body() != null && res.body().isSuccess()) {
+                        prefsManager.saveLoginResponse(res.body().getData());
+                        onSuccess.run();
+                    } else {
+                        Toast.makeText(CreateCustomOrderActivity.this, "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+                        navigateToLogin();
+                    }
+                }
+                @Override
+                public void onFailure(Call<BaseResponse<LoginResponse>> call, Throwable t) {
+                    Toast.makeText(CreateCustomOrderActivity.this, "Lỗi xác thực: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(this, AuthActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }
 
