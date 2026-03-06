@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
-    android:background="@color/colorBackground">
+    android:background="@color/colorBackground"
+    android:padding="20dp">
 
     <TextView
         android:layout_width="wrap_content"
@@ -21,5 +22,16 @@
         android:text="Giỏ hàng của bạn đang trống"
         android:textSize="14sp"
         android:textColor="@color/colorTextSecondary" />
+
+    <Button
+        android:id="@+id/btnCreateCustomOrder"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="32dp"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:text="🍽️ Tạo món ăn"
+        android:textColor="@color/colorOnPrimary"
+        android:background="@drawable/bg_button_primary" />
 
 </LinearLayout>
