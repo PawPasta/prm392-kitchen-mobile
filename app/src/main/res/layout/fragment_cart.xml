@@ -2,36 +2,125 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
-    android:background="@color/colorBackground"
-    android:padding="20dp">
+    android:background="@color/colorBackground">
 
-    <TextView
+    <!-- HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:background="@color/colorPrimary">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🛒 Giỏ hàng"
+            android:textSize="22sp"
+            android:textColor="@color/colorOnPrimary"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Đơn hàng đang chờ xác nhận"
+            android:textSize="13sp"
+            android:textColor="@color/colorOnPrimary" />
+    </LinearLayout>
+
+    <!-- INITIAL LOADING -->
+    <ProgressBar
+        android:id="@+id/progressCart"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="🛒 Giỏ hàng"
-        android:textSize="24sp"
-        android:textColor="@color/colorTextPrimary"
-        android:textStyle="bold" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="48dp"
+        android:visibility="gone" />
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- SWIPE REFRESH + CONTENT -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshCart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- EMPTY STATE -->
+                <LinearLayout
+                    android:id="@+id/layoutCartEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingTop="48dp"
+                    android:paddingBottom="32dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🛒"
+                        android:textSize="64sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Giỏ hàng trống"
+                        android:textSize="18sp"
+                        android:textColor="@color/colorTextPrimary"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Tạo đơn hàng mới để thấy chúng ở đây"
+                        android:textSize="14sp"
+                        android:textColor="@color/colorTextSecondary"
+                        android:gravity="center" />
+                </LinearLayout>
+
+                <!-- ORDERS RECYCLERVIEW -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerCart"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- BOTTOM ACTION BAR -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Giỏ hàng của bạn đang trống"
-        android:textSize="14sp"
-        android:textColor="@color/colorTextSecondary" />
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@color/colorBackground"
+        android:elevation="4dp">
 
-    <Button
-        android:id="@+id/btnCreateCustomOrder"
-        android:layout_width="wrap_content"
-        android:layout_height="48dp"
-        android:layout_marginTop="32dp"
-        android:paddingStart="32dp"
-        android:paddingEnd="32dp"
-        android:text="🍽️ Tạo món ăn"
-        android:textColor="@color/colorOnPrimary"
-        android:background="@drawable/bg_button_primary" />
+        <Button
+            android:id="@+id/btnCreateCustomOrder"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="🍽️ Tạo món ăn mới"
+            android:textColor="@color/colorOnPrimary"
+            android:textSize="15sp"
+            android:background="@drawable/bg_button_primary" />
+    </LinearLayout>
 
 </LinearLayout>
