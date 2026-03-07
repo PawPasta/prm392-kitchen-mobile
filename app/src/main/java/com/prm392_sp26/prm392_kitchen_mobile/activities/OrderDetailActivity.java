@@ -1,13 +1,17 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -17,6 +21,10 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
+import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -36,6 +44,9 @@ public class OrderDetailActivity extends AppCompatActivity {
     private TextView tvNote;
     private LinearLayout timelineContainer;
     private LinearLayout dishesContainer;
+    private Button btnCancelOrder;
+    private ProgressBar progressCancelOrder;
+    private String currentOrderId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,8 +68,11 @@ public class OrderDetailActivity extends AppCompatActivity {
         tvNote = findViewById(R.id.tvOrderDetailNote);
         timelineContainer = findViewById(R.id.timelineContainer);
         dishesContainer = findViewById(R.id.dishesContainer);
+        btnCancelOrder = findViewById(R.id.btnCancelOrder);
+        progressCancelOrder = findViewById(R.id.progressCancelOrder);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        btnCancelOrder.setOnClickListener(v -> confirmCancel());
 
         String json = getIntent().getStringExtra("order_json");
         if (json == null || json.trim().isEmpty()) {
@@ -77,8 +91,18 @@ public class OrderDetailActivity extends AppCompatActivity {
         }
 
         String orderId = order.getOrderId() == null ? "" : order.getOrderId();
+        currentOrderId = orderId;
         tvOrderId.setText("Order #" + shortId(orderId));
-        tvStatus.setText(order.getStatus() == null ? "" : order.getStatus());
+
+        String status = order.getStatus() == null ? "" : order.getStatus();
+        tvStatus.setText(status);
+
+        // Chỉ hiện nút Hủy đơn khi đơn đang ở trạng thái CREATED
+        if ("CREATED".equalsIgnoreCase(status)) {
+            btnCancelOrder.setVisibility(View.VISIBLE);
+        } else {
+            btnCancelOrder.setVisibility(View.GONE);
+        }
 
         tvCreatedAt.setText("Ngày tạo: " + formatDateTime(order.getCreatedAt()));
         String pickup = order.getPickupAt();
@@ -179,6 +203,64 @@ public class OrderDetailActivity extends AppCompatActivity {
                 dishesContainer.addView(tvItem);
             }
         }
+    }
+
+    private void confirmCancel() {
+        new AlertDialog.Builder(this)
+                .setTitle("Hủy đơn hàng")
+                .setMessage("Bạn có chắc muốn hủy đơn hàng này không?")
+                .setPositiveButton("Xác nhận", (dialog, which) -> cancelOrder())
+                .setNegativeButton("Không", null)
+                .show();
+    }
+
+    private void cancelOrder() {
+        if (currentOrderId == null || currentOrderId.trim().isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy ID đơn hàng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String token = PrefsManager.getInstance(this).getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Vui lòng đăng nhập lại", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnCancelOrder.setEnabled(false);
+        progressCancelOrder.setVisibility(View.VISIBLE);
+
+        ApiClient.getInstance().getApiService()
+                .cancelOrder("Bearer " + token, currentOrderId)
+                .enqueue(new retrofit2.Callback<BaseResponse<OrderResponse>>() {
+                    @Override
+                    public void onResponse(@NonNull retrofit2.Call<BaseResponse<OrderResponse>> call,
+                                           @NonNull retrofit2.Response<BaseResponse<OrderResponse>> response) {
+                        progressCancelOrder.setVisibility(View.GONE);
+                        btnCancelOrder.setEnabled(true);
+
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            Toast.makeText(OrderDetailActivity.this, "Đã hủy đơn hàng", Toast.LENGTH_SHORT).show();
+                            btnCancelOrder.setVisibility(View.GONE);
+                            tvStatus.setText("CANCELLED");
+                        } else {
+                            String msg = "Hủy đơn thất bại";
+                            if (response.body() != null && response.body().getMessage() != null) {
+                                msg = response.body().getMessage();
+                            } else if (response.errorBody() != null) {
+                                try { msg = response.errorBody().string(); } catch (Exception ignored) {}
+                            }
+                            Toast.makeText(OrderDetailActivity.this, msg, Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<BaseResponse<OrderResponse>> call,
+                                          @NonNull Throwable t) {
+                        progressCancelOrder.setVisibility(View.GONE);
+                        btnCancelOrder.setEnabled(true);
+                        Toast.makeText(OrderDetailActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private int dp(int value) {

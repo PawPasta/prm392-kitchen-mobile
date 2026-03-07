@@ -89,6 +89,15 @@ public interface ApiService {
     @POST("api/auth/refresh-token")
     Call<BaseResponse<LoginResponse>> refreshToken(@Body RefreshTokenRequest request);
 
+    /**
+     * Hủy đơn hàng
+     * PATCH /api/orders/{orderId}/cancel
+     */
+    @PATCH("api/orders/{orderId}/cancel")
+    Call<BaseResponse<OrderResponse>> cancelOrder(
+            @Header("Authorization") String authHeader,
+            @Path("orderId") String orderId);
+
     @GET("api/dishes")
     Call<BaseResponse<PageResponse<DishResponse>>> getDishes(
         @Header("Authorization") String token,
@@ -233,17 +242,5 @@ public interface ApiService {
             @Header("Authorization") String authHeader,
             @Body CreateCustomOrderRequest request);
 
-    /**
-     * Hủy đơn hàng có trạng thái CREATED
-     * PATCH /api/orders/{orderId}/cancel
-     *
-     * @param authHeader Authorization header dạng "Bearer <token>"
-     * @param orderId    ID của đơn hàng cần hủy
-     * @return BaseResponse<OrderResponse>
-     */
-    @PATCH("api/orders/{orderId}/cancel")
-    Call<BaseResponse<OrderResponse>> cancelOrder(
-            @Header("Authorization") String authHeader,
-            @Path("orderId") String orderId);
 
 }
