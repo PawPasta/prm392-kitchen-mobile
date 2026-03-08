@@ -24,6 +24,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserWallet;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.util.Locale;
@@ -215,8 +216,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 && response.body().isSuccess() && response.body().getData() != null) {
                             UserWallet wallet = response.body().getData().getWallet();
                             double balance = wallet == null ? 0 : wallet.getBalance();
-                            String amount = java.text.NumberFormat.getCurrencyInstance(Locale.US)
-                                    .format(balance);
+                            String amount = CurrencyFormatter.formatVnd(balance);
                             tvWalletBalance.setText("Số dư: " + amount);
                             return;
                         }

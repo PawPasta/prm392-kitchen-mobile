@@ -23,9 +23,9 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
-import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -132,8 +132,7 @@ public class DishDetailActivity extends AppCompatActivity {
                 .into(ivDishImage);
         }
 
-        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
-        tvPrice.setText(nf.format(dish.getPrice()));
+        tvPrice.setText(CurrencyFormatter.formatVnd(dish.getPrice()));
         tvCalories.setText("🔥 " + (int) dish.getCalories() + " kcal");
 
         // Status badge

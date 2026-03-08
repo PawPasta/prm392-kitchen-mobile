@@ -11,12 +11,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.DishDetailActivity;
-import com.prm392_sp26.prm392_kitchen_mobile.adapters.DishAdapter;
+import com.prm392_sp26.prm392_kitchen_mobile.adapters.MenuSectionAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiService;
@@ -36,7 +36,7 @@ public class MenuFragment extends Fragment {
     private static final String TAG = "MenuFragment";
     private static final int PAGE_SIZE = 20;
     private RecyclerView rvMenuDishes;
-    private DishAdapter dishAdapter;
+    private MenuSectionAdapter menuAdapter;
     private List<DishResponse> dishList = new ArrayList<>();
     private PrefsManager prefsManager;
     private int currentPage;
@@ -51,13 +51,20 @@ public class MenuFragment extends Fragment {
         prefsManager = PrefsManager.getInstance(requireContext());
         rvMenuDishes = view.findViewById(R.id.rvMenuDishes);
 
-        rvMenuDishes.setLayoutManager(new LinearLayoutManager(requireContext()));
-        dishAdapter = new DishAdapter(dishList, dish -> {
+        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 2);
+        menuAdapter = new MenuSectionAdapter(dish -> {
             Intent intent = new Intent(requireActivity(), DishDetailActivity.class);
             intent.putExtra("dishId", dish.getDishId());
             startActivity(intent);
         });
-        rvMenuDishes.setAdapter(dishAdapter);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return menuAdapter.getItemViewType(position) == MenuSectionAdapter.VIEW_TYPE_HEADER ? 2 : 1;
+            }
+        });
+        rvMenuDishes.setLayoutManager(layoutManager);
+        rvMenuDishes.setAdapter(menuAdapter);
 
         setupPagination();
         currentPage = 0;
@@ -74,7 +81,7 @@ public class MenuFragment extends Fragment {
                 if (dy <= 0) {
                     return;
                 }
-                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
                 if (layoutManager == null) {
                     return;
                 }
@@ -111,8 +118,8 @@ public class MenuFragment extends Fragment {
                         }
                         if (dishes != null && !dishes.isEmpty()) {
                             dishList.addAll(dishes);
-                            dishAdapter.notifyDataSetChanged();
                         }
+                        menuAdapter.setDishes(dishList);
                         isLastPage = body.getData().isLast();
                         currentPage = page;
                     }

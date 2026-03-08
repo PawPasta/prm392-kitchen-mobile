@@ -24,9 +24,9 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -279,8 +279,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     }
 
     private String formatCurrency(double amount) {
-        NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
-        return format.format(amount);
+        return CurrencyFormatter.formatVnd(amount);
     }
 
     private String formatDateTime(String input) {

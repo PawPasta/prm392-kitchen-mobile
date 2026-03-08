@@ -13,10 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder> {
 
@@ -47,9 +46,7 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
 
         holder.tvName.setText(dish.getName());
 
-        // Format price in USD currency.
-        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
-        holder.tvPrice.setText(nf.format(dish.getPrice()));
+        holder.tvPrice.setText(CurrencyFormatter.formatVnd(dish.getPrice()));
 
         // Hiện calories + status
         String statusEmoji = getStatusEmoji(dish.getStatus());

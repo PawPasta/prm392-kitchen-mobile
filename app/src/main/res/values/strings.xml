@@ -25,8 +25,10 @@
     <string name="order_status_ready">Sẵn sàng</string>
     <string name="order_status_completed">Hoàn thành</string>
     <string name="order_status_cancelled">Đã hủy</string>
+    <string name="cart_fab">Mở giỏ hàng</string>
+    <string name="create_custom_order">Tạo món tùy chỉnh</string>
     <string name="pickup_label">Nhận: %s</string>
-    <string name="discount_label">Giảm: -$%.2f</string>
+    <string name="discount_label">Giảm: -%.0f VND</string>
 
     <!-- Create Custom Order -->
     <string name="select_date">Chọn ngày</string>

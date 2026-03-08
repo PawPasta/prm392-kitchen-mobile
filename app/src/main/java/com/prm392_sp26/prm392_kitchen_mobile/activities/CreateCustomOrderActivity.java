@@ -7,13 +7,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -32,15 +31,18 @@ import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
+import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.util.Log;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
@@ -59,20 +61,28 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     // Views
     private ImageView btnBack;
-    private ChipGroup chipGroupSteps;
     private RecyclerView rvItems;
     private EditText etQuantity, etPickupDateTime, etNote;
     private MaterialButton btnQuantityPlus, btnQuantityMinus, btnCreateOrder;
     private ProgressBar progressCreateOrder;
+    private ProgressBar progressSteps;
+    private TextView tvStepProgress;
+    private TextView tvTotalCalories;
+    private TextView tvCurrentStepName;
+    private MaterialButton btnSkipStep;
+    private MaterialButton btnNextStep;
+    private View layoutFinalize;
 
     // Data
     private int quantity = 1;
     private String selectedPickupDateTime = "";
     private List<DishStepResponse> steps = new ArrayList<>();
     private DishStepResponse selectedStep = null;
+    private int currentStepIndex = 0;
     // One persistent adapter per stepId so selections survive when switching steps
     private Map<Integer, SelectableItemAdapter> stepAdapterMap = new HashMap<>();
     private Map<Integer, List<ItemResponse>> stepItemsMap = new HashMap<>();
+    private Set<Integer> skippedSteps = new HashSet<>();
     private PrefsManager prefsManager;
 
     @Override
@@ -95,7 +105,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     private void initializeViews() {
         btnBack = findViewById(R.id.btnBack);
-        chipGroupSteps = findViewById(R.id.chipGroupSteps);
         rvItems = findViewById(R.id.rvItems);
         etQuantity = findViewById(R.id.etQuantity);
         etPickupDateTime = findViewById(R.id.etPickupDateTime);
@@ -104,8 +113,18 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         btnQuantityMinus = findViewById(R.id.btnQuantityMinus);
         btnCreateOrder = findViewById(R.id.btnCreateOrder);
         progressCreateOrder = findViewById(R.id.progressCreateOrder);
+        progressSteps = findViewById(R.id.progressSteps);
+        tvStepProgress = findViewById(R.id.tvStepProgress);
+        tvTotalCalories = findViewById(R.id.tvTotalCalories);
+        tvCurrentStepName = findViewById(R.id.tvCurrentStepName);
+        btnSkipStep = findViewById(R.id.btnSkipStep);
+        btnNextStep = findViewById(R.id.btnNextStep);
+        layoutFinalize = findViewById(R.id.layoutFinalize);
 
         rvItems.setLayoutManager(new LinearLayoutManager(this));
+        if (btnCreateOrder != null) {
+            btnCreateOrder.setEnabled(false);
+        }
     }
 
     private void setupListeners() {
@@ -147,26 +166,26 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             etPickupDateTime.setOnClickListener(v -> showDateTimePicker());
         }
 
-        // ChipGroup listener — xử lý khi chip được chọn
-        if (chipGroupSteps != null) {
-            chipGroupSteps.setOnCheckedStateChangeListener((group, checkedIds) -> {
-                if (checkedIds.isEmpty()) return;
-                int checkedId = checkedIds.get(0);
-                // tag của Chip là index trong steps
-                Chip chip = group.findViewById(checkedId);
-                if (chip != null && chip.getTag() instanceof Integer) {
-                    int idx = (Integer) chip.getTag();
-                    if (idx >= 0 && idx < steps.size()) {
-                        selectedStep = steps.get(idx);
-                        displayItemsForStep(selectedStep.getStepId());
-                    }
-                }
-            });
-        }
-
         if (btnCreateOrder != null) {
             btnCreateOrder.setOnClickListener(v -> createOrder());
-            btnCreateOrder.setEnabled(true);
+        }
+
+        if (btnSkipStep != null) {
+            btnSkipStep.setOnClickListener(v -> skipCurrentStep());
+        }
+
+        if (btnNextStep != null) {
+            btnNextStep.setOnClickListener(v -> {
+                if (selectedStep == null) {
+                    return;
+                }
+                if (!isStepDone(selectedStep.getStepId())) {
+                    Toast.makeText(this, "Hãy chọn nguyên liệu hoặc bấm Bỏ qua bước", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                moveToNextStep();
+                updateProgressAndCalories();
+            });
         }
     }
 
@@ -220,28 +239,11 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                             stepItemsMap.put(stepId, groupedItems.get(stepName));
                         }
 
-                        // Build chip tabs
-                        if (chipGroupSteps != null) {
-                            chipGroupSteps.removeAllViews();
-                            for (int i = 0; i < steps.size(); i++) {
-                                Chip chip = new Chip(CreateCustomOrderActivity.this);
-                                chip.setText(steps.get(i).getStepName());
-                                chip.setTag(i);
-                                chip.setCheckable(true);
-                                chip.setCheckedIconVisible(false);
-                                chip.setChipStrokeWidth(2f);
-                                chip.setTextSize(13f);
-                                chip.setId(View.generateViewId());
-                                chipGroupSteps.addView(chip);
-                                if (i == 0) chip.setChecked(true);
-                            }
-                        }
-
                         // Display items for first step
                         if (!steps.isEmpty()) {
-                            selectedStep = steps.get(0);
-                            displayItemsForStep(selectedStep.getStepId());
+                            setCurrentStep(0);
                         }
+                        updateProgressAndCalories();
                     } else {
                         Toast.makeText(CreateCustomOrderActivity.this, "Không có nguyên liệu nào", Toast.LENGTH_SHORT).show();
                     }
@@ -291,6 +293,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
         if (adapter == null) {
             adapter = new SelectableItemAdapter(items);
+            adapter.setOnSelectionChangedListener(this::updateProgressAndCalories);
             stepAdapterMap.put(stepId, adapter);
         }
         if (rvItems != null) {
@@ -345,6 +348,11 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         }
 
         updateQuantityFromEditText();
+
+        if (!areAllStepsDone()) {
+            Toast.makeText(this, "Vui lòng hoàn tất các bước chọn nguyên liệu", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Validation
         if (quantity < 1 || quantity > 10) {
@@ -487,6 +495,182 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private boolean areAllStepsDone() {
+        if (steps.isEmpty()) {
+            return false;
+        }
+        for (DishStepResponse step : steps) {
+            int stepId = step.getStepId();
+            SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
+            boolean hasSelection = adapter != null && !adapter.getSelectedItemIds().isEmpty();
+            if (!hasSelection && !skippedSteps.contains(stepId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void skipCurrentStep() {
+        if (selectedStep == null) {
+            return;
+        }
+        skippedSteps.add(selectedStep.getStepId());
+        moveToNextStep();
+        updateProgressAndCalories();
+    }
+
+    private void moveToNextStep() {
+        if (selectedStep == null || steps.isEmpty()) {
+            return;
+        }
+        int nextIndex = currentStepIndex + 1;
+        if (nextIndex >= steps.size()) {
+            return;
+        }
+        setCurrentStep(nextIndex);
+    }
+
+    private void updateProgressAndCalories() {
+        int totalSteps = steps.size();
+        int completedSteps = 0;
+        double totalCalories = 0.0;
+
+        for (DishStepResponse step : steps) {
+            int stepId = step.getStepId();
+            SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
+            boolean hasSelection = adapter != null && !adapter.getSelectedItemIds().isEmpty();
+            if (hasSelection || skippedSteps.contains(stepId)) {
+                completedSteps++;
+            }
+            if (adapter == null) {
+                continue;
+            }
+            Map<Integer, Double> quantities = adapter.getSelectedQuantities();
+            for (Integer itemId : adapter.getSelectedItemIds()) {
+                ItemResponse item = getItemById(stepId, itemId);
+                if (item == null) {
+                    continue;
+                }
+                double qty = quantities.getOrDefault(itemId, 1.0);
+                totalCalories += getCaloriesForItem(item, qty);
+            }
+        }
+
+        if (progressSteps != null) {
+            progressSteps.setMax(Math.max(totalSteps, 1));
+            progressSteps.setProgress(completedSteps);
+        }
+        if (tvStepProgress != null) {
+            tvStepProgress.setText("Tiến độ: " + completedSteps + "/" + totalSteps + " bước");
+        }
+        if (tvTotalCalories != null) {
+            tvTotalCalories.setText(Math.round(totalCalories) + " kcal");
+        }
+
+        boolean allDone = totalSteps > 0 && completedSteps == totalSteps;
+        if (layoutFinalize != null) {
+            layoutFinalize.setVisibility(allDone ? View.VISIBLE : View.GONE);
+        }
+        if (btnCreateOrder != null) {
+            btnCreateOrder.setEnabled(allDone);
+        }
+        updateStepControls();
+    }
+
+    private void setCurrentStep(int index) {
+        if (index < 0 || index >= steps.size()) {
+            return;
+        }
+        currentStepIndex = index;
+        selectedStep = steps.get(index);
+        displayItemsForStep(selectedStep.getStepId());
+        updateCurrentStepUi();
+    }
+
+    private void updateCurrentStepUi() {
+        if (tvCurrentStepName == null) {
+            return;
+        }
+        if (steps.isEmpty() || selectedStep == null) {
+            tvCurrentStepName.setText("Bước: --");
+            int color = ContextCompat.getColor(this, R.color.stepDefault);
+            ViewCompat.setBackgroundTintList(tvCurrentStepName, ColorStateList.valueOf(color));
+            return;
+        }
+        String stepName = selectedStep.getStepName();
+        String displayName = stepName != null && !stepName.isEmpty()
+                ? "Bước " + (currentStepIndex + 1) + ": " + stepName
+                : "Bước " + (currentStepIndex + 1);
+        tvCurrentStepName.setText(displayName);
+        int color = ContextCompat.getColor(this, getStepColorRes(stepName));
+        ViewCompat.setBackgroundTintList(tvCurrentStepName, ColorStateList.valueOf(color));
+    }
+
+    private void updateStepControls() {
+        if (btnNextStep == null) {
+            return;
+        }
+        boolean isLastStep = currentStepIndex >= steps.size() - 1;
+        btnNextStep.setEnabled(!isLastStep);
+        btnNextStep.setText(isLastStep ? "Hoàn tất" : "Tiếp bước");
+    }
+
+    private boolean isStepDone(int stepId) {
+        SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
+        boolean hasSelection = adapter != null && !adapter.getSelectedItemIds().isEmpty();
+        return hasSelection || skippedSteps.contains(stepId);
+    }
+
+    private int getStepColorRes(String stepName) {
+        if (stepName == null) {
+            return R.color.stepDefault;
+        }
+        String lower = stepName.toLowerCase(Locale.ROOT);
+        if (lower.contains("vegetable") || lower.contains("rau")) {
+            return R.color.stepVeggie;
+        }
+        if (lower.contains("protein") || lower.contains("thit") || lower.contains("meat")
+                || lower.contains("seafood") || lower.contains("hai san") || lower.contains("hải sản")) {
+            return R.color.stepProtein;
+        }
+        if (lower.contains("carb") || lower.contains("com") || lower.contains("cơm")
+                || lower.contains("bun") || lower.contains("bún") || lower.contains("noodle")
+                || lower.contains("banh") || lower.contains("bánh")) {
+            return R.color.stepCarb;
+        }
+        if (lower.contains("sauce") || lower.contains("sot") || lower.contains("sốt")) {
+            return R.color.stepSauce;
+        }
+        if (lower.contains("dairy") || lower.contains("milk") || lower.contains("sua")
+                || lower.contains("sữa") || lower.contains("cheese")) {
+            return R.color.stepDairy;
+        }
+        return R.color.stepDefault;
+    }
+
+    private ItemResponse getItemById(int stepId, int itemId) {
+        List<ItemResponse> items = stepItemsMap.get(stepId);
+        if (items == null) {
+            return null;
+        }
+        for (ItemResponse item : items) {
+            if (item.getItemId() == itemId) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    private double getCaloriesForItem(ItemResponse item, double quantity) {
+        if (item.getCaloriesPerUnit() > 0) {
+            return item.getCaloriesPerUnit() * quantity;
+        }
+        if (item.getBaseQuantity() > 0 && item.getCalories() > 0) {
+            return (item.getCalories() / item.getBaseQuantity()) * quantity;
+        }
+        return item.getCalories() * quantity;
     }
 }
 

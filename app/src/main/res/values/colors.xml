@@ -47,6 +47,14 @@
     <color name="colorError">#E53935</color>
     <color name="colorSuccess">#4CAF50</color>
 
+    <!-- === STEP TAG COLORS === -->
+    <color name="stepVeggie">#43A047</color>
+    <color name="stepProtein">#E53935</color>
+    <color name="stepCarb">#FFB300</color>
+    <color name="stepSauce">#039BE5</color>
+    <color name="stepDairy">#8D6E63</color>
+    <color name="stepDefault">#FF8C42</color>
+
     <!-- === VIỀN CARD === -->
     <color name="cardStroke">#F0F0F0</color>
 

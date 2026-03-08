@@ -22,6 +22,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import android.content.Intent;
@@ -136,7 +137,7 @@ public class CreateOrderActivity extends AppCompatActivity {
 
         tvDishEmoji.setText("🍽️");
         tvDishName.setText(dishDetail.getName());
-        tvDishPrice.setText(String.format(Locale.US, "$%.2f", dishDetail.getPrice()));
+        tvDishPrice.setText(CurrencyFormatter.formatVnd(dishDetail.getPrice()));
         tvDishCalories.setText(String.format(Locale.US, "🔥 %.0f kcal", dishDetail.getCalories()));
     }
 

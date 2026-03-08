@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -161,7 +162,7 @@ public class ItemGroupAdapter extends RecyclerView.Adapter<ItemGroupAdapter.Item
                 tvItemName.setText(item.getName());
             }
             if (tvPrice != null) {
-                tvPrice.setText(String.format("%.0f đ", item.getPrice()));
+                tvPrice.setText(CurrencyFormatter.formatVnd(item.getPrice()));
             }
             if (cbSelect != null) {
                 cbSelect.setOnCheckedChangeListener(null); // Remove previous listener

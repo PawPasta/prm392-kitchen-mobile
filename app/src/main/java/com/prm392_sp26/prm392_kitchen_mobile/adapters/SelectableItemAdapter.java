@@ -9,29 +9,41 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 
-import java.text.NumberFormat;
+import android.content.res.ColorStateList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Locale;
 
 /**
  * Adapter để hiển thị items với checkbox cho custom order
  */
 public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAdapter.SelectableItemViewHolder> {
 
+    public interface OnSelectionChangedListener {
+        void onSelectionChanged();
+    }
+
     private List<ItemResponse> items;
     private Map<Integer, Double> selectedQuantities = new HashMap<>();
     private Map<Integer, String> selectedNotes = new HashMap<>();
+    private OnSelectionChangedListener selectionChangedListener;
 
     public SelectableItemAdapter(List<ItemResponse> items) {
         this.items = items;
+    }
+
+    public void setOnSelectionChangedListener(OnSelectionChangedListener listener) {
+        this.selectionChangedListener = listener;
     }
 
     @NonNull
@@ -45,14 +57,28 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
     @Override
     public void onBindViewHolder(@NonNull SelectableItemViewHolder holder, int position) {
         ItemResponse item = items.get(position);
+        String stepName = item.getStepName();
 
         holder.tvName.setText(item.getName());
-        holder.tvDescription.setText(item.getDescription() != null ? item.getDescription() : "");
+        String description = item.getDescription() != null ? item.getDescription().trim() : "";
+        if (description.isEmpty()) {
+            holder.tvDescription.setVisibility(View.GONE);
+        } else {
+            holder.tvDescription.setVisibility(View.VISIBLE);
+            holder.tvDescription.setText(description);
+        }
         holder.tvCalories.setText((int) item.getCalories() + " kcal");
 
-        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
-        holder.tvPrice.setText(nf.format(item.getPrice()));
+        holder.tvPrice.setText(CurrencyFormatter.formatVnd(item.getPrice()));
         holder.tvUnit.setText("/ " + (item.getUnit() != null ? item.getUnit() : "G"));
+
+        if (stepName == null || stepName.trim().isEmpty()) {
+            stepName = "Khác";
+        }
+        holder.tvTag.setText(stepName);
+        int stepColor = ContextCompat.getColor(holder.itemView.getContext(), getStepColorRes(stepName));
+        ViewCompat.setBackgroundTintList(holder.tvTag, ColorStateList.valueOf(stepColor));
+        ViewCompat.setBackgroundTintList(holder.viewAccent, ColorStateList.valueOf(stepColor));
 
         String imageUrl = item.getImageUrl();
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
@@ -103,6 +129,7 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
                 holder.etQuantity.setVisibility(View.GONE);
                 holder.etNote.setVisibility(View.GONE);
             }
+            notifySelectionChanged();
         });
 
         // Handle quantity change
@@ -117,6 +144,7 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
                     holder.etQuantity.setText(String.valueOf(item.getBaseQuantity()));
                     selectedQuantities.put(item.getItemId(), item.getBaseQuantity());
                 }
+                notifySelectionChanged();
             }
         });
 
@@ -125,6 +153,7 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
             if (!hasFocus) {
                 String note = holder.etNote.getText().toString().trim();
                 selectedNotes.put(item.getItemId(), note);
+                notifySelectionChanged();
             }
         });
     }
@@ -146,21 +175,54 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         return List.copyOf(selectedQuantities.keySet());
     }
 
+    private void notifySelectionChanged() {
+        if (selectionChangedListener != null) {
+            selectionChangedListener.onSelectionChanged();
+        }
+    }
+
+    private int getStepColorRes(String stepName) {
+        String lower = stepName.toLowerCase(Locale.ROOT);
+        if (lower.contains("vegetable") || lower.contains("rau")) {
+            return R.color.stepVeggie;
+        }
+        if (lower.contains("protein") || lower.contains("thit") || lower.contains("meat")
+                || lower.contains("seafood") || lower.contains("hai san") || lower.contains("hải sản")) {
+            return R.color.stepProtein;
+        }
+        if (lower.contains("carb") || lower.contains("com") || lower.contains("cơm")
+                || lower.contains("bun") || lower.contains("bún") || lower.contains("noodle")
+                || lower.contains("banh") || lower.contains("bánh")) {
+            return R.color.stepCarb;
+        }
+        if (lower.contains("sauce") || lower.contains("sot") || lower.contains("sốt")) {
+            return R.color.stepSauce;
+        }
+        if (lower.contains("dairy") || lower.contains("milk") || lower.contains("sua")
+                || lower.contains("sữa") || lower.contains("cheese")) {
+            return R.color.stepDairy;
+        }
+        return R.color.stepDefault;
+    }
+
     static class SelectableItemViewHolder extends RecyclerView.ViewHolder {
         CheckBox cbSelect;
         ImageView ivItemImage;
-        TextView tvName, tvDescription, tvCalories, tvPrice, tvUnit;
+        View viewAccent;
+        TextView tvName, tvDescription, tvCalories, tvPrice, tvUnit, tvTag;
         EditText etQuantity, etNote;
 
         SelectableItemViewHolder(@NonNull View itemView) {
             super(itemView);
             cbSelect = itemView.findViewById(R.id.cbSelectItem);
             ivItemImage = itemView.findViewById(R.id.ivItemImage);
+            viewAccent = itemView.findViewById(R.id.viewItemAccent);
             tvName = itemView.findViewById(R.id.tvItemName);
             tvDescription = itemView.findViewById(R.id.tvItemDescription);
             tvCalories = itemView.findViewById(R.id.tvItemCalories);
             tvPrice = itemView.findViewById(R.id.tvItemPrice);
             tvUnit = itemView.findViewById(R.id.tvItemUnit);
+            tvTag = itemView.findViewById(R.id.tvItemTag);
             etQuantity = itemView.findViewById(R.id.etItemQuantity);
             etNote = itemView.findViewById(R.id.etItemNote);
         }

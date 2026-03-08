@@ -82,4 +82,21 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@color/colorBackground"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnCreateCustomOrder"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="🍽️ Tạo món ăn mới"
+            android:textColor="@color/colorOnPrimary"
+            android:textSize="15sp"
+            android:background="@drawable/bg_button_primary" />
+    </LinearLayout>
 </LinearLayout>

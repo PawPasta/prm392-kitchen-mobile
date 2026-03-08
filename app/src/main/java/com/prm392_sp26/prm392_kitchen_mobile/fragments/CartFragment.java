@@ -63,12 +63,9 @@ public class CartFragment extends Fragment {
         swipeRefreshCart.setOnRefreshListener(this::loadCartOrders);
 
         btnCreateCustomOrder.setOnClickListener(v -> {
-            CreateCustomOrderFragment fragment = new CreateCustomOrderFragment();
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit();
+            Intent intent = new Intent(requireActivity(),
+                com.prm392_sp26.prm392_kitchen_mobile.activities.CreateCustomOrderActivity.class);
+            startActivity(intent);
         });
 
         loadCartOrders();

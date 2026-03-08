@@ -47,32 +47,98 @@
                 android:textSize="18sp" />
         </LinearLayout>
 
-        <!-- STEP SELECTOR -->
-        <TextView
+        <!-- PROGRESS + SKIP/NEXT -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Chọn nhóm nguyên liệu"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="20dp" />
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <!-- Tab steps dạng chip cuộn ngang -->
-        <HorizontalScrollView
+            <TextView
+                android:id="@+id/tvStepProgress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Tiến độ: 0/0 bước"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSkipStep"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:text="Bỏ qua bước"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:insetBottom="0dp"
+                android:insetTop="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:backgroundTint="@color/colorSurfaceVariant"
+                style="@style/Widget.MaterialComponents.Button" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNextStep"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Tiếp bước"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:textColor="@color/colorOnPrimary"
+                android:insetBottom="0dp"
+                android:insetTop="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:backgroundTint="@color/colorPrimary"
+                style="@style/Widget.MaterialComponents.Button" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressSteps"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="8dp"
+            android:progress="0"
+            android:max="1"
+            android:progressTint="@color/colorPrimary"
+            android:progressBackgroundTint="@color/colorSurfaceVariant" />
+
+        <!-- CURRENT STEP + CALORIES -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:scrollbars="none"
-            android:fillViewport="false">
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupSteps"
+            <TextView
+                android:id="@+id/tvCurrentStepName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Bước: --"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="10dp"
+                android:background="@drawable/bg_step_tag" />
+
+            <TextView
+                android:id="@+id/tvTotalCalories"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingBottom="4dp"
-                app:singleSelection="true"
-                app:selectionRequired="true" />
-        </HorizontalScrollView>
+                android:text="0 kcal"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
 
         <!-- ITEMS RECYCLERVIEW -->
         <TextView
@@ -151,54 +217,63 @@
                 style="@style/Widget.MaterialComponents.Button" />
         </LinearLayout>
 
-        <!-- PICKUP DATE AND TIME SECTION -->
-        <TextView
+        <!-- FINALIZE SECTION -->
+        <LinearLayout
+            android:id="@+id/layoutFinalize"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Thời gian nhận"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="20dp" />
+            android:orientation="vertical"
+            android:visibility="gone">
 
-        <EditText
-            android:id="@+id/etPickupDateTime"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:padding="12dp"
-            android:hint="Chọn ngày giờ"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textColorHint="@color/colorTextHint"
-            android:background="@color/colorSurfaceVariant"
-            android:inputType="none"
-            android:focusable="false"
-            android:clickable="true" />
+            <!-- PICKUP DATE AND TIME SECTION -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Thời gian nhận"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
 
-        <!-- NOTE SECTION -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Ghi chú"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="20dp" />
+            <EditText
+                android:id="@+id/etPickupDateTime"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:padding="12dp"
+                android:hint="Chọn ngày giờ"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="14sp"
+                android:textColorHint="@color/colorTextHint"
+                android:background="@color/colorSurfaceVariant"
+                android:inputType="none"
+                android:focusable="false"
+                android:clickable="true" />
 
-        <EditText
-            android:id="@+id/etNote"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginTop="8dp"
-            android:padding="12dp"
-            android:hint="Ghi chú cho đơn hàng"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textColorHint="@color/colorTextHint"
-            android:background="@color/colorSurfaceVariant"
-            android:inputType="textMultiLine"
-            android:gravity="top" />
+            <!-- NOTE SECTION -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ghi chú"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+
+            <EditText
+                android:id="@+id/etNote"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="8dp"
+                android:padding="12dp"
+                android:hint="Ghi chú cho đơn hàng"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="14sp"
+                android:textColorHint="@color/colorTextHint"
+                android:background="@color/colorSurfaceVariant"
+                android:inputType="textMultiLine"
+                android:gravity="top" />
+        </LinearLayout>
 
         <!-- SPACER -->
         <View

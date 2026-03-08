@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -149,12 +150,12 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             }
 
             // Prices
-            tvOrderTotal.setText(String.format(Locale.US, "%.2f", order.getTotalPrice()));
-            tvOrderFinalAmount.setText(String.format(Locale.US, "%.2f", order.getFinalAmount()));
+            tvOrderTotal.setText(CurrencyFormatter.formatVnd(order.getTotalPrice()));
+            tvOrderFinalAmount.setText(CurrencyFormatter.formatVnd(order.getFinalAmount()));
 
             // Discount
             if (order.getDiscountAmount() > 0) {
-                tvOrderDiscount.setText(String.format(Locale.US, "-$%.2f", order.getDiscountAmount()));
+                tvOrderDiscount.setText("Giảm: -" + CurrencyFormatter.formatVnd(order.getDiscountAmount()));
                 tvOrderDiscount.setVisibility(View.VISIBLE);
             } else {
                 tvOrderDiscount.setVisibility(View.GONE);

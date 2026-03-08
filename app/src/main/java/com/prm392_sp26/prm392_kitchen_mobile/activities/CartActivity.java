@@ -42,6 +42,7 @@ public class CartActivity extends AppCompatActivity {
     private TextView tvEmpty;
     private SwipeRefreshLayout swipeRefresh;
     private OrderHistoryAdapter adapter;
+    private View btnCreateCustomOrder;
     private boolean isLoading;
     private boolean isLastPage;
     private int currentPage;
@@ -64,8 +65,17 @@ public class CartActivity extends AppCompatActivity {
         progressLoadMore = findViewById(R.id.progressLoadMore);
         tvEmpty = findViewById(R.id.tvEmptyOrders);
         swipeRefresh = findViewById(R.id.swipeRefresh);
+        btnCreateCustomOrder = findViewById(R.id.btnCreateCustomOrder);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        if (btnCreateCustomOrder != null) {
+            btnCreateCustomOrder.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(
+                        CartActivity.this,
+                        com.prm392_sp26.prm392_kitchen_mobile.activities.CreateCustomOrderActivity.class);
+                startActivity(intent);
+            });
+        }
 
         adapter = new OrderHistoryAdapter();
         recyclerOrders.setLayoutManager(new LinearLayoutManager(this));

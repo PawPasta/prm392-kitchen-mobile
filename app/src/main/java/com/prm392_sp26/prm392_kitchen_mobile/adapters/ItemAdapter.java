@@ -12,10 +12,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
 
@@ -39,8 +38,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         holder.tvName.setText(item.getName());
         holder.tvCalories.setText((int) item.getCalories() + " kcal");
 
-        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.US);
-        holder.tvPrice.setText(nf.format(item.getPrice()));
+        holder.tvPrice.setText(CurrencyFormatter.formatVnd(item.getPrice()));
 
         String imageUrl = item.getImageUrl();
         if (imageUrl == null || imageUrl.trim().isEmpty()) {

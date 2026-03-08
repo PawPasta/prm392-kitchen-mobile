@@ -10,13 +10,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -142,8 +142,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
     }
 
     private String formatCurrency(double amount) {
-        NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
-        return format.format(amount);
+        return CurrencyFormatter.formatVnd(amount);
     }
 
     public interface OnItemClickListener {
