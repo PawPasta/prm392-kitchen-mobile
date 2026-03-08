@@ -62,8 +62,8 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     // Views
     private ImageView btnBack;
     private RecyclerView rvItems;
-    private EditText etQuantity, etPickupDateTime, etNote;
-    private MaterialButton btnQuantityPlus, btnQuantityMinus, btnCreateOrder;
+    private EditText etPickupDateTime, etNote;
+    private MaterialButton btnCreateOrder;
     private ProgressBar progressCreateOrder;
     private ProgressBar progressSteps;
     private TextView tvStepProgress;
@@ -106,11 +106,8 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     private void initializeViews() {
         btnBack = findViewById(R.id.btnBack);
         rvItems = findViewById(R.id.rvItems);
-        etQuantity = findViewById(R.id.etQuantity);
         etPickupDateTime = findViewById(R.id.etPickupDateTime);
         etNote = findViewById(R.id.etNote);
-        btnQuantityPlus = findViewById(R.id.btnQuantityPlus);
-        btnQuantityMinus = findViewById(R.id.btnQuantityMinus);
         btnCreateOrder = findViewById(R.id.btnCreateOrder);
         progressCreateOrder = findViewById(R.id.progressCreateOrder);
         progressSteps = findViewById(R.id.progressSteps);
@@ -130,36 +127,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     private void setupListeners() {
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
-        }
-
-        if (btnQuantityPlus != null) {
-            btnQuantityPlus.setOnClickListener(v -> {
-                if (quantity < 10) {
-                    quantity++;
-                    if (etQuantity != null) {
-                        etQuantity.setText(String.valueOf(quantity));
-                    }
-                }
-            });
-        }
-
-        if (btnQuantityMinus != null) {
-            btnQuantityMinus.setOnClickListener(v -> {
-                if (quantity > 1) {
-                    quantity--;
-                    if (etQuantity != null) {
-                        etQuantity.setText(String.valueOf(quantity));
-                    }
-                }
-            });
-        }
-
-        if (etQuantity != null) {
-            etQuantity.setOnFocusChangeListener((v, hasFocus) -> {
-                if (!hasFocus) {
-                    updateQuantityFromEditText();
-                }
-            });
         }
 
         if (etPickupDateTime != null) {
@@ -301,20 +268,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         }
     }
 
-    private void updateQuantityFromEditText() {
-        try {
-            String qtyStr = etQuantity != null ? etQuantity.getText().toString() : "1";
-            quantity = Integer.parseInt(qtyStr);
-            if (quantity < 1) quantity = 1;
-            if (quantity > 10) quantity = 10;
-        } catch (NumberFormatException e) {
-            quantity = 1;
-            if (etQuantity != null) {
-                etQuantity.setText("1");
-            }
-        }
-    }
-
     private void showDateTimePicker() {
         Calendar calendar = Calendar.getInstance();
 
@@ -347,18 +300,11 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             btnCreateOrder.setEnabled(true);
         }
 
-        updateQuantityFromEditText();
-
         if (!areAllStepsDone()) {
             Toast.makeText(this, "Vui lòng hoàn tất các bước chọn nguyên liệu", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        // Validation
-        if (quantity < 1 || quantity > 10) {
-            Toast.makeText(this, "Số lượng phải từ 1 đến 10", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        quantity = 1;
 
         if (selectedPickupDateTime == null || selectedPickupDateTime.isEmpty()) {
             Toast.makeText(this, "Vui lòng chọn thời gian lấy món", Toast.LENGTH_SHORT).show();
@@ -609,12 +555,18 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     }
 
     private void updateStepControls() {
-        if (btnNextStep == null) {
+        if (btnNextStep == null || btnSkipStep == null) {
             return;
         }
         boolean isLastStep = currentStepIndex >= steps.size() - 1;
-        btnNextStep.setEnabled(!isLastStep);
-        btnNextStep.setText(isLastStep ? "Hoàn tất" : "Tiếp bước");
+        if (isLastStep) {
+            btnSkipStep.setVisibility(View.GONE);
+            btnNextStep.setVisibility(View.GONE);
+        } else {
+            btnSkipStep.setVisibility(View.VISIBLE);
+            btnNextStep.setVisibility(View.VISIBLE);
+            btnNextStep.setText("Tiếp bước");
+        }
     }
 
     private boolean isStepDone(int stepId) {

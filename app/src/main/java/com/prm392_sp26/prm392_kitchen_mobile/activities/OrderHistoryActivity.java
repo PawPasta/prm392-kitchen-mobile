@@ -2,6 +2,8 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -20,7 +22,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.OrderHistoryAdapter;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
@@ -74,6 +78,7 @@ public class OrderHistoryActivity extends AppCompatActivity {
         recyclerOrders.setLayoutManager(new LinearLayoutManager(this));
         recyclerOrders.setAdapter(adapter);
         adapter.setOnItemClickListener(this::openOrderDetail);
+        adapter.setOnCancelClickListener(this::showCancelReasonDialog);
 
         setupChips();
         setupRefresh();
@@ -254,5 +259,74 @@ public class OrderHistoryActivity extends AppCompatActivity {
         android.content.Intent intent = new android.content.Intent(this, OrderDetailActivity.class);
         intent.putExtra("order_json", json);
         startActivity(intent);
+    }
+
+    private void showCancelReasonDialog(OrderHistoryResponse.OrderItem item) {
+        if (item == null || item.getOrderId() == null || item.getOrderId().trim().isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy ID đơn hàng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        EditText input = new EditText(this);
+        input.setHint("Nhập lý do hủy");
+        input.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout container = new LinearLayout(this);
+        container.setPadding(padding, padding / 2, padding, 0);
+        container.addView(input);
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Lý do hủy đơn")
+                .setView(container)
+                .setPositiveButton("Xác nhận", (dialog, which) -> {
+                    String reason = input.getText().toString().trim();
+                    if (reason.isEmpty()) {
+                        Toast.makeText(this, "Vui lòng nhập lý do hủy", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    cancelOrder(item.getOrderId(), reason);
+                })
+                .setNegativeButton("Không", null)
+                .show();
+    }
+
+    private void cancelOrder(String orderId, String reason) {
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        ApiClient.getInstance()
+                .getApiService()
+                .cancelOrder("Bearer " + token, orderId, new CancelOrderRequest(reason))
+                .enqueue(new Callback<BaseResponse<OrderResponse>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<BaseResponse<OrderResponse>> call,
+                            @NonNull Response<BaseResponse<OrderResponse>> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            Toast.makeText(OrderHistoryActivity.this, "Đã hủy đơn hàng", Toast.LENGTH_SHORT).show();
+                            currentPage = 0;
+                            isLastPage = false;
+                            loadOrders(0, pageSize, selectedStatus, false);
+                            return;
+                        }
+                        String msg = "Hủy đơn thất bại";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            msg = response.body().getMessage();
+                        }
+                        Toast.makeText(OrderHistoryActivity.this, msg, Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<BaseResponse<OrderResponse>> call,
+                            @NonNull Throwable t) {
+                        Toast.makeText(OrderHistoryActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

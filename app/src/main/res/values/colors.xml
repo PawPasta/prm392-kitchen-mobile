@@ -61,4 +61,11 @@
     <!-- === PROFILE CARD === -->
     <color name="profileCardStart">#19B394</color>
     <color name="profileCardEnd">#12A4B5</color>
+
+    <!-- === ORDER STATUS COLORS === -->
+    <color name="statusGreen">#2E7D32</color>
+    <color name="statusBlue">#1976D2</color>
+    <color name="statusYellow">#F9A825</color>
+    <color name="statusPink">#D81B60</color>
+    <color name="statusRed">#D32F2F</color>
 </resources>

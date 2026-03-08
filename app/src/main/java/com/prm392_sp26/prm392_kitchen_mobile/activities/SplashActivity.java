@@ -10,8 +10,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.prm392_sp26.prm392_kitchen_mobile.MainActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.OnboardingAdapter;
@@ -36,11 +34,11 @@ public class SplashActivity extends AppCompatActivity {
 
         prefsManager = PrefsManager.getInstance(this);
 
-        // // ====== KIỂM TRA: đã xem onboarding chưa? ======
-        // if (prefsManager.isOnboardingDone()) {
-        //     navigateBasedOnLoginStatus();
-        //     return; 
-        // }
+        // ====== KIỂM TRA: đã xem onboarding chưa? ======
+        if (prefsManager.isOnboardingDone()) {
+            navigateBasedOnLoginStatus();
+            return;
+        }
 
         // ====== CHƯA XEM → Hiển thị onboarding ======
         setContentView(R.layout.activity_splash);
@@ -141,11 +139,12 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void navigateBasedOnLoginStatus() {
-        // Luôn yêu cầu đăng nhập mỗi lần mở app
-        FirebaseAuth.getInstance().signOut();
-        prefsManager.clearSession();
-
-        Intent intent = new Intent(this, AuthActivity.class);
+        String accessToken = prefsManager.getAccessToken();
+        boolean hasToken = accessToken != null && !accessToken.trim().isEmpty();
+        Intent intent = new Intent(this, prefsManager.isLoggedIn() && hasToken
+                ? MainActivity.class
+                : AuthActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }

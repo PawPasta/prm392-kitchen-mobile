@@ -3,7 +3,9 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -20,12 +22,14 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
+import com.prm392_sp26.prm392_kitchen_mobile.util.StatusColorUtil;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -96,6 +100,7 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         String status = order.getStatus() == null ? "" : order.getStatus();
         tvStatus.setText(status);
+        tvStatus.setTextColor(getColor(StatusColorUtil.getStatusColorRes(status)));
 
         // Chỉ hiện nút Hủy đơn khi đơn đang ở trạng thái CREATED
         if ("CREATED".equalsIgnoreCase(status)) {
@@ -134,7 +139,6 @@ public class OrderDetailActivity extends AppCompatActivity {
             TextView chip = new TextView(this);
             chip.setText(status);
             chip.setTextSize(11f);
-            chip.setTextColor(getResources().getColor(R.color.colorTextPrimary));
             chip.setPadding(dp(10), dp(6), dp(10), dp(6));
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -142,9 +146,17 @@ public class OrderDetailActivity extends AppCompatActivity {
             params.setMarginEnd(dp(6));
             chip.setLayoutParams(params);
             boolean isActive = status.equalsIgnoreCase(currentStatus);
-            chip.setBackgroundResource(isActive
-                    ? R.drawable.bg_status_chip_active
-                    : R.drawable.bg_status_chip_inactive);
+            if (isActive) {
+                int statusColor = getColor(StatusColorUtil.getStatusBackgroundColorRes(status));
+                chip.setBackgroundResource(R.drawable.bg_status_chip_active);
+                if (chip.getBackground() != null) {
+                    chip.getBackground().setTint(statusColor);
+                }
+                chip.setTextColor(getColor(R.color.white));
+            } else {
+                chip.setBackgroundResource(R.drawable.bg_status_chip_inactive);
+                chip.setTextColor(getColor(R.color.colorTextPrimary));
+            }
             timelineContainer.addView(chip);
         }
     }
@@ -206,15 +218,33 @@ public class OrderDetailActivity extends AppCompatActivity {
     }
 
     private void confirmCancel() {
+        int padding = dp(16);
+        EditText input = new EditText(this);
+        input.setHint("Nhập lý do hủy");
+        input.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout container = new LinearLayout(this);
+        container.setPadding(padding, padding / 2, padding, 0);
+        container.addView(input);
+
         new AlertDialog.Builder(this)
-                .setTitle("Hủy đơn hàng")
-                .setMessage("Bạn có chắc muốn hủy đơn hàng này không?")
-                .setPositiveButton("Xác nhận", (dialog, which) -> cancelOrder())
+                .setTitle("Lý do hủy đơn")
+                .setView(container)
+                .setPositiveButton("Xác nhận", (dialog, which) -> {
+                    String reason = input.getText().toString().trim();
+                    if (reason.isEmpty()) {
+                        Toast.makeText(this, "Vui lòng nhập lý do hủy", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    cancelOrder(reason);
+                })
                 .setNegativeButton("Không", null)
                 .show();
     }
 
-    private void cancelOrder() {
+    private void cancelOrder(String reason) {
         if (currentOrderId == null || currentOrderId.trim().isEmpty()) {
             Toast.makeText(this, "Không tìm thấy ID đơn hàng", Toast.LENGTH_SHORT).show();
             return;
@@ -230,7 +260,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         progressCancelOrder.setVisibility(View.VISIBLE);
 
         ApiClient.getInstance().getApiService()
-                .cancelOrder("Bearer " + token, currentOrderId)
+                .cancelOrder("Bearer " + token, currentOrderId, new CancelOrderRequest(reason))
                 .enqueue(new retrofit2.Callback<BaseResponse<OrderResponse>>() {
                     @Override
                     public void onResponse(@NonNull retrofit2.Call<BaseResponse<OrderResponse>> call,
@@ -242,6 +272,7 @@ public class OrderDetailActivity extends AppCompatActivity {
                             Toast.makeText(OrderDetailActivity.this, "Đã hủy đơn hàng", Toast.LENGTH_SHORT).show();
                             btnCancelOrder.setVisibility(View.GONE);
                             tvStatus.setText("CANCELLED");
+                            tvStatus.setTextColor(getColor(StatusColorUtil.getStatusColorRes("CANCELLED")));
                         } else {
                             String msg = "Hủy đơn thất bại";
                             if (response.body() != null && response.body().getMessage() != null) {

@@ -3,6 +3,7 @@ package com.prm392_sp26.prm392_kitchen_mobile.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.StatusColorUtil;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +26,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
 
     private final List<OrderHistoryResponse.OrderItem> items = new ArrayList<>();
     private OnItemClickListener onItemClickListener;
+    private OnCancelClickListener onCancelClickListener;
 
     public void setItems(List<OrderHistoryResponse.OrderItem> newItems) {
         items.clear();
@@ -46,6 +49,10 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         this.onItemClickListener = listener;
     }
 
+    public void setOnCancelClickListener(OnCancelClickListener listener) {
+        this.onCancelClickListener = listener;
+    }
+
     @NonNull
     @Override
     public OrderViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -59,7 +66,11 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         OrderHistoryResponse.OrderItem item = items.get(position);
         String orderId = item.getOrderId() == null ? "" : item.getOrderId();
         holder.tvOrderId.setText("Order #" + shortId(orderId));
-        holder.tvStatus.setText(item.getStatus() == null ? "" : item.getStatus());
+        String status = item.getStatus() == null ? "" : item.getStatus();
+        holder.tvStatus.setText(status);
+        int statusColor = holder.itemView.getContext()
+                .getColor(StatusColorUtil.getStatusColorRes(status));
+        holder.tvStatus.setTextColor(statusColor);
 
         holder.tvCreatedAt.setText("Ngày: " + formatDateTime(item.getCreatedAt()));
         String pickup = item.getPickupAt();
@@ -75,6 +86,10 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
 
         double amount = item.getFinalAmount() > 0 ? item.getFinalAmount() : item.getTotalPrice();
         holder.tvTotal.setText("Tổng: " + formatCurrency(amount));
+
+        boolean showCancel = onCancelClickListener != null && shouldShowCancel(item.getStatus());
+        holder.btnCancelOrder.setVisibility(showCancel ? View.VISIBLE : View.GONE);
+        holder.btnCancelOrder.setOnClickListener(showCancel ? v -> onCancelClickListener.onCancelClick(item) : null);
 
         holder.itemView.setOnClickListener(v -> {
             if (onItemClickListener != null) {
@@ -145,8 +160,19 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         return CurrencyFormatter.formatVnd(amount);
     }
 
+    private boolean shouldShowCancel(String status) {
+        if (status == null) {
+            return true;
+        }
+        return !"COMPLETED".equalsIgnoreCase(status.trim());
+    }
+
     public interface OnItemClickListener {
         void onItemClick(OrderHistoryResponse.OrderItem item);
+    }
+
+    public interface OnCancelClickListener {
+        void onCancelClick(OrderHistoryResponse.OrderItem item);
     }
 
     static class OrderViewHolder extends RecyclerView.ViewHolder {
@@ -156,6 +182,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         private final TextView tvPickupAt;
         private final TextView tvItemsCount;
         private final TextView tvTotal;
+        private final Button btnCancelOrder;
 
         OrderViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -165,6 +192,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
             tvPickupAt = itemView.findViewById(R.id.tvPickupAt);
             tvItemsCount = itemView.findViewById(R.id.tvItemsCount);
             tvTotal = itemView.findViewById(R.id.tvTotal);
+            btnCancelOrder = itemView.findViewById(R.id.btnCancelOrder);
         }
     }
 }

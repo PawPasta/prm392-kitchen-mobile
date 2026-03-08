@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.graphics.drawable.Drawable;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.StatusColorUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -109,7 +111,15 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             // Status
             String status = getStatusLabel(order.getStatus());
             tvOrderStatus.setText(status);
-            tvOrderStatus.setBackgroundColor(getStatusColor(order.getStatus()));
+            int statusColor = itemView.getContext()
+                    .getColor(StatusColorUtil.getStatusBackgroundColorRes(order.getStatus()));
+            Drawable background = tvOrderStatus.getBackground();
+            if (background != null) {
+                background.setTint(statusColor);
+            } else {
+                tvOrderStatus.setBackgroundColor(statusColor);
+            }
+            tvOrderStatus.setTextColor(itemView.getContext().getColor(R.color.white));
 
             // Created At
             SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
@@ -180,16 +190,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             return status;
         }
 
-        private int getStatusColor(String status) {
-            if (status == null) return itemView.getContext().getColor(R.color.colorSurfaceVariant);
-            if ("CREATED".equals(status)) return itemView.getContext().getColor(R.color.colorSurfaceVariant);
-            if ("CONFIRMED".equals(status)) return itemView.getContext().getColor(R.color.colorPrimaryLight);
-            if ("PROCESSING".equals(status)) return itemView.getContext().getColor(R.color.colorPrimary);
-            if ("READY".equals(status)) return itemView.getContext().getColor(R.color.colorSuccess);
-            if ("COMPLETED".equals(status)) return itemView.getContext().getColor(R.color.colorSuccess);
-            if ("CANCELLED".equals(status)) return itemView.getContext().getColor(R.color.colorError);
-            return itemView.getContext().getColor(R.color.colorSurfaceVariant);
-        }
     }
 }
 

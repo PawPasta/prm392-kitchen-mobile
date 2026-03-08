@@ -63,7 +63,7 @@
                             android:textSize="15sp"
                             android:textStyle="bold" />
 
-                        <CheckBox
+                        <com.google.android.material.checkbox.MaterialCheckBox
                             android:id="@+id/cbSelectItem"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
@@ -143,6 +143,7 @@
             android:layout_marginVertical="8dp" />
 
         <LinearLayout
+            android:id="@+id/layoutItemOptions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -164,16 +165,45 @@
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="13sp" />
 
-                <EditText
-                    android:id="@+id/etItemQuantity"
-                    android:layout_width="80dp"
-                    android:layout_height="36dp"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnItemQuantityMinus"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_marginStart="8dp"
-                    android:padding="8dp"
-                    android:inputType="numberDecimal"
+                    android:text="-"
+                    android:textSize="14sp"
+                    android:textColor="@color/colorOnPrimary"
+                    android:insetBottom="0dp"
+                    android:insetTop="0dp"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
+                    app:backgroundTint="@color/colorPrimary"
+                    style="@style/Widget.MaterialComponents.Button" />
+
+                <TextView
+                    android:id="@+id/tvItemQuantity"
+                    android:layout_width="56dp"
+                    android:layout_height="32dp"
+                    android:layout_marginHorizontal="8dp"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textColor="@color/colorTextPrimary"
                     android:textSize="13sp"
-                    android:background="@color/colorSurfaceVariant"
-                    android:textColor="@color/colorTextPrimary" />
+                    android:background="@color/colorSurfaceVariant" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnItemQuantityPlus"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="+"
+                    android:textSize="14sp"
+                    android:textColor="@color/colorOnPrimary"
+                    android:insetBottom="0dp"
+                    android:insetTop="0dp"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
+                    app:backgroundTint="@color/colorPrimary"
+                    style="@style/Widget.MaterialComponents.Button" />
             </LinearLayout>
 
             <LinearLayout

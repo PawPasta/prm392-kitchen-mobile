@@ -14,6 +14,7 @@ import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.button.MaterialButton;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
@@ -103,49 +104,45 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         holder.cbSelect.setChecked(isSelected);
 
         // Show/hide quantity and note fields based on selection
+        holder.layoutItemOptions.setVisibility(isSelected ? View.VISIBLE : View.GONE);
         if (isSelected) {
-            holder.etQuantity.setVisibility(View.VISIBLE);
-            holder.etNote.setVisibility(View.VISIBLE);
-            holder.etQuantity.setText(String.valueOf(selectedQuantities.get(item.getItemId())));
+            double qty = selectedQuantities.getOrDefault(item.getItemId(), getDefaultQuantity(item));
+            holder.tvQuantity.setText(formatQuantity(qty));
             holder.etNote.setText(selectedNotes.getOrDefault(item.getItemId(), ""));
-        } else {
-            holder.etQuantity.setVisibility(View.GONE);
-            holder.etNote.setVisibility(View.GONE);
         }
 
         // Handle checkbox change — chỉ cho phép nếu item ENABLE
         holder.cbSelect.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!isEnabled) return;
             if (isChecked) {
-                selectedQuantities.put(item.getItemId(), item.getBaseQuantity());
+                double defaultQty = getDefaultQuantity(item);
+                selectedQuantities.put(item.getItemId(), defaultQty);
                 selectedNotes.put(item.getItemId(), "");
-                holder.etQuantity.setVisibility(View.VISIBLE);
-                holder.etNote.setVisibility(View.VISIBLE);
-                holder.etQuantity.setText(String.valueOf(item.getBaseQuantity()));
+                holder.layoutItemOptions.setVisibility(View.VISIBLE);
+                holder.tvQuantity.setText(formatQuantity(defaultQty));
                 holder.etNote.setText("");
             } else {
                 selectedQuantities.remove(item.getItemId());
                 selectedNotes.remove(item.getItemId());
-                holder.etQuantity.setVisibility(View.GONE);
-                holder.etNote.setVisibility(View.GONE);
+                holder.layoutItemOptions.setVisibility(View.GONE);
             }
             notifySelectionChanged();
         });
 
-        // Handle quantity change
-        holder.etQuantity.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                try {
-                    double quantity = Double.parseDouble(holder.etQuantity.getText().toString());
-                    if (quantity > 0) {
-                        selectedQuantities.put(item.getItemId(), quantity);
-                    }
-                } catch (NumberFormatException e) {
-                    holder.etQuantity.setText(String.valueOf(item.getBaseQuantity()));
-                    selectedQuantities.put(item.getItemId(), item.getBaseQuantity());
-                }
-                notifySelectionChanged();
-            }
+        // Handle quantity change (step = 50)
+        holder.btnQuantityMinus.setOnClickListener(v -> {
+            double current = selectedQuantities.getOrDefault(item.getItemId(), getDefaultQuantity(item));
+            double updated = Math.max(50.0, current - 50.0);
+            selectedQuantities.put(item.getItemId(), updated);
+            holder.tvQuantity.setText(formatQuantity(updated));
+            notifySelectionChanged();
+        });
+        holder.btnQuantityPlus.setOnClickListener(v -> {
+            double current = selectedQuantities.getOrDefault(item.getItemId(), getDefaultQuantity(item));
+            double updated = current + 50.0;
+            selectedQuantities.put(item.getItemId(), updated);
+            holder.tvQuantity.setText(formatQuantity(updated));
+            notifySelectionChanged();
         });
 
         // Handle note change
@@ -205,12 +202,30 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         return R.color.stepDefault;
     }
 
+    private double getDefaultQuantity(ItemResponse item) {
+        double base = item.getBaseQuantity();
+        if (base <= 0) {
+            return 50.0;
+        }
+        return Math.max(50.0, base);
+    }
+
+    private String formatQuantity(double quantity) {
+        if (quantity == Math.floor(quantity)) {
+            return String.format(Locale.US, "%.0f", quantity);
+        }
+        return String.format(Locale.US, "%.1f", quantity);
+    }
+
     static class SelectableItemViewHolder extends RecyclerView.ViewHolder {
         CheckBox cbSelect;
         ImageView ivItemImage;
         View viewAccent;
         TextView tvName, tvDescription, tvCalories, tvPrice, tvUnit, tvTag;
-        EditText etQuantity, etNote;
+        View layoutItemOptions;
+        TextView tvQuantity;
+        MaterialButton btnQuantityMinus, btnQuantityPlus;
+        EditText etNote;
 
         SelectableItemViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -223,7 +238,10 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
             tvPrice = itemView.findViewById(R.id.tvItemPrice);
             tvUnit = itemView.findViewById(R.id.tvItemUnit);
             tvTag = itemView.findViewById(R.id.tvItemTag);
-            etQuantity = itemView.findViewById(R.id.etItemQuantity);
+            layoutItemOptions = itemView.findViewById(R.id.layoutItemOptions);
+            btnQuantityMinus = itemView.findViewById(R.id.btnItemQuantityMinus);
+            btnQuantityPlus = itemView.findViewById(R.id.btnItemQuantityPlus);
+            tvQuantity = itemView.findViewById(R.id.tvItemQuantity);
             etNote = itemView.findViewById(R.id.etItemNote);
         }
     }

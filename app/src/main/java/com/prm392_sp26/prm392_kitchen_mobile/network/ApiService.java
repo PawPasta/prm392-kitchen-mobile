@@ -1,6 +1,7 @@
 package com.prm392_sp26.prm392_kitchen_mobile.network;
 
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.LoginRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
@@ -96,7 +97,8 @@ public interface ApiService {
     @PATCH("api/orders/{orderId}/cancel")
     Call<BaseResponse<OrderResponse>> cancelOrder(
             @Header("Authorization") String authHeader,
-            @Path("orderId") String orderId);
+            @Path("orderId") String orderId,
+            @Body CancelOrderRequest request);
 
     @GET("api/dishes")
     Call<BaseResponse<PageResponse<DishResponse>>> getDishes(
