@@ -20,7 +20,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📋 Đơn hàng của tôi"
+                android:text="Đơn hàng của tôi"
                 android:textSize="24sp"
                 android:textColor="@color/colorTextPrimary"
                 android:textStyle="bold" />
@@ -166,4 +166,3 @@
     </androidx.core.widget.NestedScrollView>
 
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-

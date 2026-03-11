@@ -107,12 +107,12 @@ public class HomeFragment extends Fragment {
         if (firebaseAuth.getCurrentUser() != null) {
             String displayName = firebaseAuth.getCurrentUser().getDisplayName();
             if (displayName != null && !displayName.isEmpty()) {
-                tvWelcome.setText("Xin chào, " + displayName + "! 👋");
+                tvWelcome.setText("Xin chào, " + displayName + "!");
             } else {
-                tvWelcome.setText("Xin chào! 👋");
+                tvWelcome.setText("Xin chào!");
             }
         } else {
-            tvWelcome.setText("Xin chào! 👋");
+            tvWelcome.setText("Xin chào!");
         }
         tvUserInfo.setText("Bạn muốn ăn gì hôm nay?");
     }
