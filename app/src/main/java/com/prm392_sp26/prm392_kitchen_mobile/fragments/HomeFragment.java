@@ -22,7 +22,6 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.DishDetailActivity;
-import com.prm392_sp26.prm392_kitchen_mobile.activities.ProfileActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.BannerAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.DishAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.BannerItem;
@@ -48,7 +47,6 @@ public class HomeFragment extends Fragment {
     private static final int PAGE_SIZE = 10;
     private static final int BANNER_INTERVAL_MS = 4000;
     private TextView tvWelcome, tvUserInfo;
-    private View avatarPlaceholder;
     private NestedScrollView homeScroll;
     private ViewPager2 bannerPager;
     private LinearLayout bannerIndicators;
@@ -76,7 +74,6 @@ public class HomeFragment extends Fragment {
         tvWelcome = view.findViewById(R.id.tvWelcome);
         tvUserInfo = view.findViewById(R.id.tvUserInfo);
         rvDishes = view.findViewById(R.id.rvDishes);
-        avatarPlaceholder = view.findViewById(R.id.avatarPlaceholder);
         homeScroll = view.findViewById(R.id.homeScroll);
         bannerPager = view.findViewById(R.id.bannerPager);
         bannerIndicators = view.findViewById(R.id.bannerIndicators);
@@ -92,7 +89,6 @@ public class HomeFragment extends Fragment {
 
         // Logic
         displayUserInfo();
-        avatarPlaceholder.setOnClickListener(v -> navigateToProfile());
 
         setupBanner();
         setupLazyLoading();
@@ -115,11 +111,6 @@ public class HomeFragment extends Fragment {
             tvWelcome.setText("Xin chào!");
         }
         tvUserInfo.setText("Bạn muốn ăn gì hôm nay?");
-    }
-
-    private void navigateToProfile() {
-        Intent intent = new Intent(requireActivity(), ProfileActivity.class);
-        startActivity(intent);
     }
 
     private void setupLazyLoading() {
