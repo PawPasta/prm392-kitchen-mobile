@@ -212,9 +212,21 @@ public class HomeFragment extends Fragment {
 
     private void setupBanner() {
         List<BannerItem> items = new ArrayList<>();
-        items.add(new BannerItem("Deal of the day", "Save more on fresh meals today", "Order now"));
-        items.add(new BannerItem("Chef picks", "Popular dishes recommended this week", "View menu"));
-        items.add(new BannerItem("Fast pickup", "Quick pickup options for busy days", "Explore"));
+        items.add(new BannerItem(
+                "Món mới trong ngày",
+                "Thử ngay các món nóng vừa ra bếp",
+                "Xem ngay",
+                "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg"));
+        items.add(new BannerItem(
+                "Chef's Selection",
+                "Top món ăn được đặt nhiều nhất tuần này",
+                "Khám phá",
+                "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg"));
+        items.add(new BannerItem(
+                "Healthy Bowl",
+                "Gợi ý bữa ăn cân bằng, giàu năng lượng",
+                "Đặt ngay",
+                "https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg"));
 
         BannerAdapter bannerAdapter = new BannerAdapter(items);
         bannerPager.setAdapter(bannerAdapter);

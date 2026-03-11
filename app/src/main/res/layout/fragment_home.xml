@@ -49,7 +49,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="-24dp"
                 android:background="@drawable/bg_search_bar"
                 android:elevation="4dp"
                 android:gravity="center_vertical"
@@ -69,7 +69,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="20dp"
                 android:text="Danh mục"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="18sp"
@@ -88,29 +88,29 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <LinearLayout android:layout_width="96dp" android:layout_height="96dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="10dp" android:background="@drawable/bg_category_card">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍚" android:textSize="28sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Cơm" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
+                    <LinearLayout android:layout_width="82dp" android:layout_height="82dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="6dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍚" android:textSize="23sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Cơm" android:textColor="@color/colorTextPrimary" android:textSize="10sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="96dp" android:layout_height="96dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="10dp" android:background="@drawable/bg_category_card">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍜" android:textSize="28sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Phở" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
+                    <LinearLayout android:layout_width="82dp" android:layout_height="82dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="6dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍜" android:textSize="23sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Phở" android:textColor="@color/colorTextPrimary" android:textSize="10sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="96dp" android:layout_height="96dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="10dp" android:background="@drawable/bg_category_card">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🥖" android:textSize="28sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Bánh mì" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
+                    <LinearLayout android:layout_width="82dp" android:layout_height="82dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="6dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🥖" android:textSize="23sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Bánh mì" android:textColor="@color/colorTextPrimary" android:textSize="10sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="96dp" android:layout_height="96dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="10dp" android:background="@drawable/bg_category_card">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🧋" android:textSize="28sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Trà sữa" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
+                    <LinearLayout android:layout_width="82dp" android:layout_height="82dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="6dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🧋" android:textSize="23sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Trà sữa" android:textColor="@color/colorTextPrimary" android:textSize="10sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="96dp" android:layout_height="96dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="10dp" android:background="@drawable/bg_category_card">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍿" android:textSize="28sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Ăn vặt" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
+                    <LinearLayout android:layout_width="82dp" android:layout_height="82dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="6dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍿" android:textSize="23sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Ăn vặt" android:textColor="@color/colorTextPrimary" android:textSize="10sp" />
                     </LinearLayout>
 
                 </LinearLayout>
