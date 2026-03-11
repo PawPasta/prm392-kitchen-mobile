@@ -49,8 +49,9 @@ public class MainActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-            int verticalPad = dpToPx(3);
-            v.setPadding(0, verticalPad, 0, verticalPad);
+            int topPad = dpToPx(3);
+            int bottomPad = dpToPx(0);
+            v.setPadding(0, topPad, 0, bottomPad);
 
             ViewGroup.LayoutParams rawParams = v.getLayoutParams();
             if (rawParams instanceof ViewGroup.MarginLayoutParams) {
