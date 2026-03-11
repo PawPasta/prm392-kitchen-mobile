@@ -6,7 +6,7 @@ package com.prm392_sp26.prm392_kitchen_mobile.util;
 public class Constants {
 
     // Base URL của backend API
-    public static final String BASE_URL = "https://prm392-kitchen-be.onrender.com/";
+    public static final String BASE_URL = "https://chicken-kitchen.milize-lena.space/";
 
     // SharedPreferences keys
     public static final String PREFS_NAME = "prm392_kitchen_prefs";
