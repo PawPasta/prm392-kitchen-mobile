@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import android.view.View;
+import android.view.ViewGroup;
 import com.prm392_sp26.prm392_kitchen_mobile.fragments.HomeFragment;
 import com.prm392_sp26.prm392_kitchen_mobile.fragments.MenuFragment;
 import com.prm392_sp26.prm392_kitchen_mobile.fragments.OrdersFragment;
@@ -44,11 +45,23 @@ public class MainActivity extends AppCompatActivity {
         fabCart = findViewById(R.id.fabCart);
         fabCustomOrder = findViewById(R.id.fabCustomOrder);
         fabStack = findViewById(R.id.fabStack);
-        // Padding bottom = system nav bar để không bị che, top thêm chút cho cân đối
+        // Giữ khoảng cách trên/dưới cân bằng cho icon + label; đưa system inset ra ngoài bằng margin.
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            int topPad = (int) (8 * getResources().getDisplayMetrics().density);
-            v.setPadding(0, topPad, 0, systemBars.bottom + topPad);
+
+            int verticalPad = dpToPx(6);
+            v.setPadding(0, verticalPad, 0, verticalPad);
+
+            ViewGroup.LayoutParams rawParams = v.getLayoutParams();
+            if (rawParams instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) rawParams;
+                if (params.bottomMargin != systemBars.bottom) {
+                    params.bottomMargin = systemBars.bottom;
+                    v.setLayoutParams(params);
+                }
+            }
+
+            updateFabStackBottomMargin();
             return insets;
         });
 
@@ -92,13 +105,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (fabStack != null) {
-            bottomNav.post(() -> {
-                int bottomMargin = bottomNav.getHeight() + dpToPx(10);
-                android.view.ViewGroup.MarginLayoutParams params =
-                        (android.view.ViewGroup.MarginLayoutParams) fabStack.getLayoutParams();
-                params.bottomMargin = bottomMargin;
-                fabStack.setLayoutParams(params);
-            });
+            bottomNav.post(this::updateFabStackBottomMargin);
         }
     }
 
@@ -111,6 +118,30 @@ public class MainActivity extends AppCompatActivity {
 
     private int dpToPx(int value) {
         return (int) (value * getResources().getDisplayMetrics().density);
+    }
+
+    private void updateFabStackBottomMargin() {
+        if (fabStack == null || bottomNav == null) {
+            return;
+        }
+
+        int navInsetBottom = 0;
+        ViewGroup.LayoutParams navRawParams = bottomNav.getLayoutParams();
+        if (navRawParams instanceof ViewGroup.MarginLayoutParams) {
+            navInsetBottom = ((ViewGroup.MarginLayoutParams) navRawParams).bottomMargin;
+        }
+
+        int bottomMargin = bottomNav.getHeight() + navInsetBottom + dpToPx(10);
+        ViewGroup.LayoutParams fabRawParams = fabStack.getLayoutParams();
+        if (!(fabRawParams instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        ViewGroup.MarginLayoutParams fabParams = (ViewGroup.MarginLayoutParams) fabRawParams;
+        if (fabParams.bottomMargin == bottomMargin) {
+            return;
+        }
+        fabParams.bottomMargin = bottomMargin;
+        fabStack.setLayoutParams(fabParams);
     }
 
     private void switchFragment(Fragment fragment) {
