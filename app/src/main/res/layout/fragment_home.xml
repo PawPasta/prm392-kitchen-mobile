@@ -21,30 +21,46 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:paddingStart="20dp"
                 android:paddingTop="20dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="40dp"
                 android:background="@drawable/bg_gradient_primary">
 
-                <TextView
-                    android:id="@+id/tvWelcome"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Xin chào!"
-                    android:textColor="@color/white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tvUserInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Bạn muốn ăn gì hôm nay?"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="13sp" />
+                    <TextView
+                        android:id="@+id/tvWelcome"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Xin chào!"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvUserInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Bạn muốn ăn gì hôm nay?"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/ivNotification"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/ic_notification"
+                    app:tint="@color/white" />
             </LinearLayout>
 
             <!-- SEARCH BAR -->
@@ -91,29 +107,29 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="4dp" android:background="@drawable/bg_category_tile">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍚" android:textSize="21sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Cơm" android:textColor="@color/colorTextPrimary" android:textSize="9sp" />
+                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="2dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍚" android:textSize="25sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Cơm" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="4dp" android:background="@drawable/bg_category_tile">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍜" android:textSize="21sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Phở" android:textColor="@color/colorTextPrimary" android:textSize="9sp" />
+                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="2dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍜" android:textSize="25sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Phở" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="4dp" android:background="@drawable/bg_category_tile">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🥖" android:textSize="21sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Bánh mì" android:textColor="@color/colorTextPrimary" android:textSize="9sp" />
+                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="2dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🥖" android:textSize="25sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Bánh mì" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="4dp" android:background="@drawable/bg_category_tile">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🧋" android:textSize="21sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Trà sữa" android:textColor="@color/colorTextPrimary" android:textSize="9sp" />
+                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="2dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🧋" android:textSize="25sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Trà sữa" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
                     </LinearLayout>
 
-                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="4dp" android:background="@drawable/bg_category_tile">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍿" android:textSize="21sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Ăn vặt" android:textColor="@color/colorTextPrimary" android:textSize="9sp" />
+                    <LinearLayout android:layout_width="74dp" android:layout_height="74dp" android:orientation="vertical" android:gravity="center" android:layout_marginHorizontal="4dp" android:padding="2dp" android:background="@drawable/bg_category_tile">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🍿" android:textSize="25sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Ăn vặt" android:textColor="@color/colorTextPrimary" android:textSize="11sp" />
                     </LinearLayout>
 
                 </LinearLayout>

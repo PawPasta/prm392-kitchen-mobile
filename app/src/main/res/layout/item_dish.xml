@@ -11,20 +11,20 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="126dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp">
+        android:padding="12dp">
 
         <!-- Image/Emoji placeholder cho món ăn -->
         <FrameLayout
-            android:layout_width="56dp"
-            android:layout_height="56dp">
+            android:layout_width="100dp"
+            android:layout_height="100dp">
 
             <ImageView
                 android:id="@+id/ivDishImage"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
                 android:background="@drawable/bg_search_bar"
                 android:clipToOutline="true"
                 android:contentDescription=""
@@ -33,18 +33,18 @@
 
             <TextView
                 android:id="@+id/tvDishIcon"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
                 android:gravity="center"
                 android:text="🍽️"
-                android:textSize="32sp"
+                android:textSize="42sp"
                 android:background="@drawable/bg_search_bar" />
         </FrameLayout>
 
         <!-- Thông tin món -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginStart="12dp">
@@ -55,9 +55,9 @@
                 android:layout_height="wrap_content"
                 android:text="Tên món"
                 android:textColor="@color/colorTextPrimary"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:ellipsize="end" />
 
             <TextView
@@ -67,17 +67,23 @@
                 android:layout_marginTop="4dp"
                 android:text="🔥 0 kcal"
                 android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp" />
-        </LinearLayout>
+                android:textSize="13sp" />
 
-        <!-- Giá -->
-        <TextView
-            android:id="@+id/tvDishPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0 VND"
-            android:textColor="@color/colorPrimary"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Giá -->
+            <TextView
+                android:id="@+id/tvDishPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="0 VND"
+                android:textColor="@color/colorPrimary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>
