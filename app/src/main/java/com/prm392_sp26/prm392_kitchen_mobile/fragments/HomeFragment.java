@@ -23,6 +23,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.DishDetailActivity;
+import com.prm392_sp26.prm392_kitchen_mobile.activities.StepItemsActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.BannerAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.DishAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.BannerItem;
@@ -90,6 +91,7 @@ public class HomeFragment extends Fragment {
 
         // Logic
         displayUserInfo();
+        setupCategoryNavigation(view);
 
         setupBanner();
         setupLazyLoading();
@@ -112,6 +114,29 @@ public class HomeFragment extends Fragment {
             tvWelcome.setText("Xin chào!");
         }
         tvUserInfo.setText("Bạn muốn ăn gì hôm nay?");
+    }
+
+    private void setupCategoryNavigation(@NonNull View root) {
+        bindCategoryClick(root, R.id.categoryCarb, 1, "Carb");
+        bindCategoryClick(root, R.id.categoryProtein, 2, "Protein");
+        bindCategoryClick(root, R.id.categoryVegetables, 3, "Vegetables");
+        bindCategoryClick(root, R.id.categorySauce, 4, "Sauce");
+        bindCategoryClick(root, R.id.categoryExtra, 5, "Extra");
+    }
+
+    private void bindCategoryClick(@NonNull View root, int viewId, int stepId, @NonNull String stepName) {
+        View categoryView = root.findViewById(viewId);
+        if (categoryView == null) {
+            return;
+        }
+        categoryView.setOnClickListener(v -> openStepItems(stepId, stepName));
+    }
+
+    private void openStepItems(int stepId, @NonNull String stepName) {
+        Intent intent = new Intent(requireActivity(), StepItemsActivity.class);
+        intent.putExtra(StepItemsActivity.EXTRA_STEP_ID, stepId);
+        intent.putExtra(StepItemsActivity.EXTRA_STEP_NAME, stepName);
+        startActivity(intent);
     }
 
     private void setupLazyLoading() {
