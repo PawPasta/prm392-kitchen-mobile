@@ -4,6 +4,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -23,8 +24,15 @@ import java.util.Set;
 
 public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDishViewHolder> {
 
+    public interface OnSelectionChangeListener {
+        void onSelectionChanged(int selectedCount, int totalCount, boolean allSelected);
+    }
+
     private final List<OrderResponse.OrderDishDetail> items = new ArrayList<>();
     private final Set<Integer> expandedDishKeys = new HashSet<>();
+    private final Set<Integer> selectedDishKeys = new HashSet<>();
+    private OnSelectionChangeListener onSelectionChangeListener;
+    private boolean selectionMode;
 
     public void setItems(List<OrderResponse.OrderDishDetail> newItems) {
         items.clear();
@@ -32,7 +40,49 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
         if (newItems != null) {
             items.addAll(newItems);
         }
+        syncSelectionWithCurrentItems();
         notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public void setOnSelectionChangeListener(OnSelectionChangeListener listener) {
+        this.onSelectionChangeListener = listener;
+    }
+
+    public void setSelectionMode(boolean enabled) {
+        selectionMode = enabled;
+        if (!enabled) {
+            selectedDishKeys.clear();
+        }
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public boolean isSelectionMode() {
+        return selectionMode;
+    }
+
+    public void setSelectAll(boolean selected) {
+        selectedDishKeys.clear();
+        if (selected) {
+            for (int i = 0; i < items.size(); i++) {
+                selectedDishKeys.add(getDishKey(items.get(i), i));
+            }
+        }
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public Set<Integer> getSelectedDishKeys() {
+        return new HashSet<>(selectedDishKeys);
+    }
+
+    public int getSelectedCount() {
+        return selectedDishKeys.size();
+    }
+
+    public boolean isAllSelected() {
+        return !items.isEmpty() && selectedDishKeys.size() == items.size();
     }
 
     @NonNull
@@ -63,6 +113,19 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
         }
 
         int dishKey = getDishKey(item, position);
+
+        holder.cbSelectDish.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+        holder.cbSelectDish.setOnCheckedChangeListener(null);
+        holder.cbSelectDish.setChecked(selectionMode && selectedDishKeys.contains(dishKey));
+        holder.cbSelectDish.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                selectedDishKeys.add(dishKey);
+            } else {
+                selectedDishKeys.remove(dishKey);
+            }
+            notifySelectionChanged();
+        });
+
         boolean expanded = expandedDishKeys.contains(dishKey);
         holder.tvExpandToggle.setText(expanded ? "Ẩn thành phần ▲" : "Xem thành phần ▼");
         holder.tvComponents.setVisibility(expanded ? View.VISIBLE : View.GONE);
@@ -76,7 +139,17 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
             } else {
                 expandedDishKeys.add(dishKey);
             }
-            notifyItemChanged(position);
+            int adapterPosition = holder.getBindingAdapterPosition();
+            if (adapterPosition != RecyclerView.NO_POSITION) {
+                notifyItemChanged(adapterPosition);
+            }
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            if (!selectionMode) {
+                return;
+            }
+            holder.cbSelectDish.toggle();
         });
     }
 
@@ -93,6 +166,27 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
             return item.getOrderDishId();
         }
         return -1 - position;
+    }
+
+    private void syncSelectionWithCurrentItems() {
+        if (selectedDishKeys.isEmpty()) {
+            return;
+        }
+        Set<Integer> validKeys = new HashSet<>();
+        for (int i = 0; i < items.size(); i++) {
+            validKeys.add(getDishKey(items.get(i), i));
+        }
+        selectedDishKeys.retainAll(validKeys);
+    }
+
+    private void notifySelectionChanged() {
+        if (onSelectionChangeListener == null) {
+            return;
+        }
+        onSelectionChangeListener.onSelectionChanged(
+                selectedDishKeys.size(),
+                items.size(),
+                isAllSelected());
     }
 
     private String buildComponentsText(List<OrderResponse.OrderDishItemDetail> customItems) {
@@ -157,6 +251,7 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
     }
 
     static class CartDishViewHolder extends RecyclerView.ViewHolder {
+        private final CheckBox cbSelectDish;
         private final ImageView ivDish;
         private final TextView tvDishName;
         private final TextView tvDishMeta;
@@ -166,6 +261,7 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
 
         CartDishViewHolder(@NonNull View itemView) {
             super(itemView);
+            cbSelectDish = itemView.findViewById(R.id.cbSelectDish);
             ivDish = itemView.findViewById(R.id.ivDishImage);
             tvDishName = itemView.findViewById(R.id.tvDishName);
             tvDishMeta = itemView.findViewById(R.id.tvDishMeta);

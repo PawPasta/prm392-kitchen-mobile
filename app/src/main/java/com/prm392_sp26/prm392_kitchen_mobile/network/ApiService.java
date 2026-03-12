@@ -5,6 +5,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.LoginRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateOrderDishesRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
@@ -225,6 +226,11 @@ public interface ApiService {
     );
 
     // ==================== ORDER MANAGEMENT APIs ====================
+
+    @PUT("api/orders/dishes")
+    Call<BaseResponse<OrderResponse>> updateOrderDishes(
+            @Header("Authorization") String authHeader,
+            @Body UpdateOrderDishesRequest request);
 
     @POST
     Call<BaseResponse<OrderResponse>> createOrder(
