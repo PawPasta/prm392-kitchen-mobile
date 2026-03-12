@@ -1,7 +1,5 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,12 +26,9 @@ import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import android.content.Intent;
 import android.util.Log;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
@@ -50,14 +45,12 @@ public class CreateOrderActivity extends AppCompatActivity {
     private int dishId;
     private DishDetailResponse dishDetail;
     private int quantity = 1;
-    private String selectedPickupDateTime;
 
     private TextView tvDishEmoji;
     private TextView tvDishName;
     private TextView tvDishPrice;
     private TextView tvDishCalories;
     private EditText etQuantity;
-    private EditText etPickupDateTime;
     private EditText etNote;
     private Button btnCreateOrder;
     private Button btnQuantityMinus;
@@ -65,19 +58,11 @@ public class CreateOrderActivity extends AppCompatActivity {
     private ProgressBar progressCreateOrder;
     private ImageView btnBack;
 
-    // UTC format — 'Z' suffix chỉ hợp lệ khi formatter dùng UTC timezone
-    private SimpleDateFormat dateTimeFormat;
-    private final SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_order);
-
-        // Khởi tạo formatter UTC để pickupAt luôn đúng chuẩn ISO 8601 UTC
-        dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-        dateTimeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.createOrderRoot), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -97,7 +82,6 @@ public class CreateOrderActivity extends AppCompatActivity {
         tvDishPrice = findViewById(R.id.tvDishPrice);
         tvDishCalories = findViewById(R.id.tvDishCalories);
         etQuantity = findViewById(R.id.etQuantity);
-        etPickupDateTime = findViewById(R.id.etPickupDateTime);
         etNote = findViewById(R.id.etNote);
         btnCreateOrder = findViewById(R.id.btnCreateOrder);
         btnQuantityMinus = findViewById(R.id.btnQuantityMinus);
@@ -179,10 +163,6 @@ public class CreateOrderActivity extends AppCompatActivity {
             });
         }
 
-        if (etPickupDateTime != null) {
-            etPickupDateTime.setOnClickListener(v -> showDateTimePicker());
-        }
-
         if (btnCreateOrder != null) {
             btnCreateOrder.setOnClickListener(v -> createOrder());
             btnCreateOrder.setEnabled(true);
@@ -206,37 +186,6 @@ public class CreateOrderActivity extends AppCompatActivity {
         }
     }
 
-    private void showDateTimePicker() {
-        Calendar calendar = Calendar.getInstance();
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                this,
-                (view, year, month, dayOfMonth) -> {
-                    calendar.set(year, month, dayOfMonth);
-                    TimePickerDialog timePickerDialog = new TimePickerDialog(
-                            this,
-                            (timeView, hourOfDay, minute) -> {
-                                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                                calendar.set(Calendar.MINUTE, minute);
-                                calendar.set(Calendar.SECOND, 0);
-
-                                selectedPickupDateTime = dateTimeFormat.format(calendar.getTime());
-                                etPickupDateTime.setText(displayFormat.format(calendar.getTime()));
-                            },
-                            calendar.get(Calendar.HOUR_OF_DAY),
-                            calendar.get(Calendar.MINUTE),
-                            true
-                    );
-                    timePickerDialog.show();
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-        );
-
-        datePickerDialog.show();
-    }
-
     private void createOrder() {
         // Đảm bảo button được enable
         if (btnCreateOrder != null) {
@@ -251,12 +200,6 @@ public class CreateOrderActivity extends AppCompatActivity {
             return;
         }
 
-        // Validation: Kiểm tra thời gian lấy
-        if (selectedPickupDateTime == null || selectedPickupDateTime.isEmpty()) {
-            Toast.makeText(this, "Vui lòng chọn thời gian lấy món", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         // Validation: Kiểm tra dishId
         if (dishId <= 0) {
             Toast.makeText(this, "Lỗi: Không tìm thấy ID món ăn", Toast.LENGTH_SHORT).show();
@@ -267,7 +210,7 @@ public class CreateOrderActivity extends AppCompatActivity {
 
         List<CreateOrderRequest.DishInput> dishes = new ArrayList<>();
         dishes.add(CreateOrderRequest.DishInput.fromDish(dishId, quantity));
-        CreateOrderRequest request = new CreateOrderRequest(selectedPickupDateTime, note, dishes);
+        CreateOrderRequest request = new CreateOrderRequest(null, note, dishes);
 
         // Show loading state
         if (progressCreateOrder != null) {
@@ -365,7 +308,6 @@ public class CreateOrderActivity extends AppCompatActivity {
         finish();
     }
 }
-
 
 
 

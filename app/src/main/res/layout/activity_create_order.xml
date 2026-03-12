@@ -175,31 +175,6 @@
                 style="@style/Widget.MaterialComponents.Button" />
         </LinearLayout>
 
-        <!-- PICKUP DATE AND TIME SECTION -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/pickup_time"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="20dp" />
-
-        <EditText
-            android:id="@+id/etPickupDateTime"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:padding="12dp"
-            android:hint="@string/select_pickup_time"
-            android:textColor="@color/colorTextPrimary"
-            android:textSize="14sp"
-            android:textColorHint="@color/colorTextHint"
-            android:background="@color/colorSurfaceVariant"
-            android:inputType="none"
-            android:focusable="false"
-            android:clickable="true" />
-
         <!-- NOTE SECTION -->
         <TextView
             android:layout_width="match_parent"
@@ -257,4 +232,3 @@
     </LinearLayout>
 
 </ScrollView>
-

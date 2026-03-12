@@ -1,7 +1,5 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -35,16 +33,13 @@ import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.util.Log;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
@@ -63,7 +58,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     // Views
     private ImageView btnBack;
     private RecyclerView rvItems;
-    private EditText etPickupDateTime, etNote;
+    private EditText etNote;
     private MaterialButton btnCreateOrder;
     private ProgressBar progressCreateOrder;
     private ProgressBar progressSteps;
@@ -76,7 +71,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     // Data
     private int quantity = 1;
-    private String selectedPickupDateTime = "";
     private List<DishStepResponse> steps = new ArrayList<>();
     private DishStepResponse selectedStep = null;
     private int currentStepIndex = 0;
@@ -107,7 +101,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     private void initializeViews() {
         btnBack = findViewById(R.id.btnBack);
         rvItems = findViewById(R.id.rvItems);
-        etPickupDateTime = findViewById(R.id.etPickupDateTime);
         etNote = findViewById(R.id.etNote);
         btnCreateOrder = findViewById(R.id.btnCreateOrder);
         progressCreateOrder = findViewById(R.id.progressCreateOrder);
@@ -128,10 +121,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     private void setupListeners() {
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
-        }
-
-        if (etPickupDateTime != null) {
-            etPickupDateTime.setOnClickListener(v -> showDateTimePicker());
         }
 
         if (btnCreateOrder != null) {
@@ -269,33 +258,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         }
     }
 
-    private void showDateTimePicker() {
-        Calendar calendar = Calendar.getInstance();
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
-                (view, year, month, dayOfMonth) -> {
-                    calendar.set(year, month, dayOfMonth);
-
-                    TimePickerDialog timePickerDialog = new TimePickerDialog(this,
-                            (view1, hourOfDay, minute) -> {
-                                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                                calendar.set(Calendar.MINUTE, minute);
-
-                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-                                sdf.setTimeZone(TimeZone.getTimeZone("UTC")); // gửi UTC, không phải local time
-                                selectedPickupDateTime = sdf.format(calendar.getTime());
-                                if (etPickupDateTime != null) {
-                                    SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
-                                    etPickupDateTime.setText(displayFormat.format(calendar.getTime()));
-                                }
-                            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
-
-                    timePickerDialog.show();
-                }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-
-        datePickerDialog.show();
-    }
-
     private void createOrder() {
         if (btnCreateOrder != null) {
             btnCreateOrder.setEnabled(true);
@@ -306,11 +268,6 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             return;
         }
         quantity = 1;
-
-        if (selectedPickupDateTime == null || selectedPickupDateTime.isEmpty()) {
-            Toast.makeText(this, "Vui lòng chọn thời gian lấy món", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // Collect selections from ALL steps
         List<CreateOrderRequest.Step> stepsList = new ArrayList<>();
@@ -340,7 +297,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
         List<CreateOrderRequest.DishInput> dishes = new ArrayList<>();
         dishes.add(CreateOrderRequest.DishInput.fromCustom(customDish, quantity));
-        CreateOrderRequest request = new CreateOrderRequest(selectedPickupDateTime, note, dishes);
+        CreateOrderRequest request = new CreateOrderRequest(null, note, dishes);
 
         // Show loading
         if (progressCreateOrder != null) {
