@@ -25,7 +25,11 @@ import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -50,7 +54,7 @@ public class StepItemsActivity extends AppCompatActivity {
     private View categorySauce;
     private View categoryExtra;
 
-    private int stepId = 1;
+    private final Set<Integer> selectedStepIds = new LinkedHashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +79,8 @@ public class StepItemsActivity extends AppCompatActivity {
         });
 
         prefsManager = PrefsManager.getInstance(this);
-        stepId = sanitizeStepId(getIntent().getIntExtra(EXTRA_STEP_ID, 1));
+        int initialStepId = sanitizeStepId(getIntent().getIntExtra(EXTRA_STEP_ID, 1));
+        selectedStepIds.add(initialStepId);
 
         recyclerItems = findViewById(R.id.recyclerStepItems);
         progressItems = findViewById(R.id.progressStepItems);
@@ -97,8 +102,8 @@ public class StepItemsActivity extends AppCompatActivity {
         setupCategoryNavigation();
         updateCategorySelection();
 
-        swipeRefresh.setOnRefreshListener(this::loadItemsByStep);
-        loadItemsByStep();
+        swipeRefresh.setOnRefreshListener(this::loadItemsForSelectedSteps);
+        loadItemsForSelectedSteps();
     }
 
     private void setupCategoryNavigation() {
@@ -114,21 +119,22 @@ public class StepItemsActivity extends AppCompatActivity {
             return;
         }
         categoryView.setOnClickListener(v -> {
-            if (stepId == targetStepId) {
-                return;
+            if (selectedStepIds.contains(targetStepId)) {
+                selectedStepIds.remove(targetStepId);
+            } else {
+                selectedStepIds.add(targetStepId);
             }
-            stepId = targetStepId;
             updateCategorySelection();
-            loadItemsByStep();
+            loadItemsForSelectedSteps();
         });
     }
 
     private void updateCategorySelection() {
-        setCategorySelected(categoryCarb, stepId == 1);
-        setCategorySelected(categoryProtein, stepId == 2);
-        setCategorySelected(categoryVegetables, stepId == 3);
-        setCategorySelected(categorySauce, stepId == 4);
-        setCategorySelected(categoryExtra, stepId == 5);
+        setCategorySelected(categoryCarb, selectedStepIds.contains(1));
+        setCategorySelected(categoryProtein, selectedStepIds.contains(2));
+        setCategorySelected(categoryVegetables, selectedStepIds.contains(3));
+        setCategorySelected(categorySauce, selectedStepIds.contains(4));
+        setCategorySelected(categoryExtra, selectedStepIds.contains(5));
     }
 
     private void setCategorySelected(View categoryView, boolean selected) {
@@ -146,49 +152,90 @@ public class StepItemsActivity extends AppCompatActivity {
         return rawStepId;
     }
 
-    private void loadItemsByStep() {
+    private void loadItemsForSelectedSteps() {
+        if (selectedStepIds.isEmpty()) {
+            setLoading(false);
+            showItems(new ArrayList<>());
+            tvEmpty.setText("Chọn ít nhất một danh mục");
+            return;
+        }
+
         String token = prefsManager.getAccessToken();
         if (token == null || token.trim().isEmpty()) {
             Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
             return;
         }
 
+        List<Integer> steps = new ArrayList<>(selectedStepIds);
         setLoading(true);
-        ApiClient.getInstance()
-                .getApiService()
-                .getItemsByStep("Bearer " + token, stepId, 0, PAGE_SIZE)
-                .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
-                            @NonNull Response<BaseResponse<PageResponse<ItemResponse>>> response) {
-                        setLoading(false);
 
-                        if (response.isSuccessful() && response.body() != null
-                                && response.body().isSuccess()
-                                && response.body().getData() != null) {
-                            List<ItemResponse> data = response.body().getData().getContent();
-                            showItems(data);
-                            return;
+        List<ItemResponse> mergedItems = new ArrayList<>();
+        final int totalRequests = steps.size();
+        final int[] finishedRequests = {0};
+        final int[] failedRequests = {0};
+
+        for (Integer stepId : steps) {
+            ApiClient.getInstance()
+                    .getApiService()
+                    .getItemsByStep("Bearer " + token, stepId, 0, PAGE_SIZE)
+                    .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
+                        @Override
+                        public void onResponse(
+                                @NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
+                                @NonNull Response<BaseResponse<PageResponse<ItemResponse>>> response) {
+                            if (response.isSuccessful() && response.body() != null
+                                    && response.body().isSuccess()
+                                    && response.body().getData() != null
+                                    && response.body().getData().getContent() != null) {
+                                mergedItems.addAll(response.body().getData().getContent());
+                            } else {
+                                failedRequests[0]++;
+                            }
+                            onStepItemsRequestFinished(finishedRequests, totalRequests, failedRequests[0], mergedItems);
                         }
 
-                        showItems(new ArrayList<>());
-                        Toast.makeText(StepItemsActivity.this,
-                                "Không tải được danh sách item",
-                                Toast.LENGTH_SHORT).show();
-                    }
+                        @Override
+                        public void onFailure(
+                                @NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
+                                @NonNull Throwable t) {
+                            failedRequests[0]++;
+                            onStepItemsRequestFinished(finishedRequests, totalRequests, failedRequests[0], mergedItems);
+                        }
+                    });
+        }
+    }
 
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
-                            @NonNull Throwable t) {
-                        setLoading(false);
-                        showItems(new ArrayList<>());
-                        Toast.makeText(StepItemsActivity.this,
-                                "Lỗi kết nối: " + t.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+    private void onStepItemsRequestFinished(
+            int[] finishedRequests,
+            int totalRequests,
+            int failedRequests,
+            List<ItemResponse> mergedItems) {
+        finishedRequests[0]++;
+        if (finishedRequests[0] < totalRequests) {
+            return;
+        }
+
+        setLoading(false);
+        showItems(deduplicateByItemId(mergedItems));
+        if (failedRequests > 0) {
+            Toast.makeText(this,
+                    "Một số danh mục tải thất bại",
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private List<ItemResponse> deduplicateByItemId(List<ItemResponse> rawItems) {
+        Map<Integer, ItemResponse> uniqueItems = new LinkedHashMap<>();
+        if (rawItems == null) {
+            return new ArrayList<>();
+        }
+        for (ItemResponse item : rawItems) {
+            if (item == null) {
+                continue;
+            }
+            uniqueItems.put(item.getItemId(), item);
+        }
+        return new ArrayList<>(uniqueItems.values());
     }
 
     private void setLoading(boolean loading) {
@@ -207,8 +254,8 @@ public class StepItemsActivity extends AppCompatActivity {
         boolean isEmpty = items == null || items.isEmpty();
         recyclerItems.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
-        if (isEmpty) {
-            tvEmpty.setText("Không có item cho danh mục này");
+        if (isEmpty && !selectedStepIds.isEmpty()) {
+            tvEmpty.setText("Không có item cho danh mục đã chọn");
         }
     }
 }
