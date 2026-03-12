@@ -58,9 +58,19 @@ public class StepItemsActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_step_items);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.stepItemsRoot), (v, insets) -> {
+        final View root = findViewById(R.id.stepItemsRoot);
+        final int basePaddingLeft = root.getPaddingLeft();
+        final int basePaddingTop = root.getPaddingTop();
+        final int basePaddingRight = root.getPaddingRight();
+        final int basePaddingBottom = root.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            v.setPadding(
+                    basePaddingLeft + systemBars.left,
+                    basePaddingTop + systemBars.top,
+                    basePaddingRight + systemBars.right,
+                    basePaddingBottom + systemBars.bottom);
             return insets;
         });
 
