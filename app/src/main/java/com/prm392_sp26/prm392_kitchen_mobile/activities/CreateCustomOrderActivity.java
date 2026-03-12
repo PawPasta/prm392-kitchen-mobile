@@ -443,7 +443,8 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                 if (item == null) {
                     continue;
                 }
-                double qty = quantities.getOrDefault(itemId, 1.0);
+                double defaultQty = item.getBaseQuantity() > 0 ? item.getBaseQuantity() : 50.0;
+                double qty = quantities.getOrDefault(itemId, defaultQty);
                 totalCalories += getCaloriesForItem(item, qty);
             }
         }

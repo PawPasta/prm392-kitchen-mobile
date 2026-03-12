@@ -132,7 +132,8 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         // Handle quantity change (step = 50)
         holder.btnQuantityMinus.setOnClickListener(v -> {
             double current = selectedQuantities.getOrDefault(item.getItemId(), getDefaultQuantity(item));
-            double updated = Math.max(50.0, current - 50.0);
+            double minQuantity = getDefaultQuantity(item);
+            double updated = Math.max(minQuantity, current - 50.0);
             selectedQuantities.put(item.getItemId(), updated);
             holder.tvQuantity.setText(formatQuantity(updated));
             notifySelectionChanged();
@@ -207,7 +208,7 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         if (base <= 0) {
             return 50.0;
         }
-        return Math.max(50.0, base);
+        return base;
     }
 
     private String formatQuantity(double quantity) {
@@ -246,4 +247,3 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         }
     }
 }
-
