@@ -2,11 +2,10 @@ package com.prm392_sp26.prm392_kitchen_mobile.network;
 
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.LoginRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
-import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderFromDishRequest;
-import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateCustomOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
@@ -26,6 +25,7 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.Url;
 
 /**
  * Retrofit API Service interface
@@ -218,31 +218,11 @@ public interface ApiService {
 
     // ==================== ORDER MANAGEMENT APIs ====================
 
-    /**
-     * Tạo đơn hàng từ một dish có sẵn
-     * POST /api/orders/from-dish
-     *
-     * @param authHeader Authorization header dạng "Bearer <token>"
-     * @param request    chứa dishId, quantity, pickupAt, note
-     * @return BaseResponse<OrderResponse> với thông tin đơn hàng vừa tạo
-     */
-    @POST("api/orders/from-dish")
-    Call<BaseResponse<OrderResponse>> createOrderFromDish(
+    @POST
+    Call<BaseResponse<OrderResponse>> createOrder(
+            @Url String url,
             @Header("Authorization") String authHeader,
-            @Body CreateOrderFromDishRequest request);
-
-    /**
-     * Tạo đơn hàng từ custom dish builder
-     * POST /api/orders/custom
-     *
-     * @param authHeader Authorization header dạng "Bearer <token>"
-     * @param request    chứa customDish với steps, quantity, pickupAt, note
-     * @return BaseResponse<OrderResponse> với thông tin đơn hàng vừa tạo
-     */
-    @POST("api/orders/custom")
-    Call<BaseResponse<OrderResponse>> createCustomOrder(
-            @Header("Authorization") String authHeader,
-            @Body CreateCustomOrderRequest request);
+            @Body CreateOrderRequest request);
 
 
 }

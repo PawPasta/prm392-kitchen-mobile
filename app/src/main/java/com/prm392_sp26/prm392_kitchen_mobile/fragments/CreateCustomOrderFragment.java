@@ -20,12 +20,13 @@ import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.ItemGroupAdapter;
-import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateCustomOrderRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.Constants;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.text.SimpleDateFormat;
@@ -242,22 +243,22 @@ public class CreateCustomOrderFragment extends Fragment {
             return;
         }
 
-        // Build custom order request
-        CreateCustomOrderRequest.CustomDish customDish = buildCustomDish(selectedItems);
+        // Build unified order request
+        CreateOrderRequest.CustomDish customDish = buildCustomDish(selectedItems);
         String note = etNote.getText().toString().trim();
 
-        CreateCustomOrderRequest request = new CreateCustomOrderRequest(
-                1,  // quantity = 1 for custom order
+        List<CreateOrderRequest.DishInput> dishes = new ArrayList<>();
+        dishes.add(CreateOrderRequest.DishInput.fromCustom(customDish, 1));
+        CreateOrderRequest request = new CreateOrderRequest(
                 pickupAtStr,
                 note.isEmpty() ? null : note,
-                customDish
-        );
+                dishes);
 
         setLoading(true);
 
         ApiClient.getInstance()
                 .getApiService()
-                .createCustomOrder("Bearer " + token, request)
+                .createOrder(Constants.ORDER_CREATE_URL, "Bearer " + token, request)
                 .enqueue(new Callback<BaseResponse<OrderResponse>>() {
                     @Override
                     public void onResponse(@NonNull Call<BaseResponse<OrderResponse>> call,
@@ -289,40 +290,27 @@ public class CreateCustomOrderFragment extends Fragment {
     /**
      * Build CustomDish từ selected items
      */
-    private CreateCustomOrderRequest.CustomDish buildCustomDish(Map<Integer, ItemResponse> selectedItems) {
-        Map<Integer, CreateCustomOrderRequest.Step> stepsMap = new HashMap<>();
+    private CreateOrderRequest.CustomDish buildCustomDish(Map<Integer, ItemResponse> selectedItems) {
+        Map<Integer, CreateOrderRequest.Step> stepsMap = new HashMap<>();
 
         // Group items by stepId
         for (ItemResponse item : selectedItems.values()) {
             int stepId = item.getStepId();
-            CreateCustomOrderRequest.Step step = stepsMap.get(stepId);
+            CreateOrderRequest.Step step = stepsMap.get(stepId);
 
             if (step == null) {
-                step = new CreateCustomOrderRequest.Step();
-                step.setStepId(stepId);
-                step.setItemIds(new ArrayList<>());
-                step.setItems(new ArrayList<>());
+                step = new CreateOrderRequest.Step(stepId, new ArrayList<>());
                 stepsMap.put(stepId, step);
             }
 
             step.getItemIds().add(item.getItemId());
-
-            // Create item entry with base quantity
-            CreateCustomOrderRequest.Item itemSelection = new CreateCustomOrderRequest.Item();
-            itemSelection.setItemId(item.getItemId());
-            itemSelection.setQuantity(item.getBaseQuantity());
-            itemSelection.setNote(null);
-            step.getItems().add(itemSelection);
         }
 
         // Create CustomDish
-        CreateCustomOrderRequest.CustomDish customDish = new CreateCustomOrderRequest.CustomDish();
-        customDish.setName("Món ăn tùy chỉnh");
-        customDish.setDescription("Món ăn được tạo từ các nguyên liệu được chọn");
-        customDish.setImageUrl(null);
-        customDish.setSteps(new ArrayList<>(stepsMap.values()));
-
-        return customDish;
+        return new CreateOrderRequest.CustomDish(
+                "Món ăn tùy chỉnh",
+                "Món ăn được tạo từ các nguyên liệu được chọn",
+                new ArrayList<>(stepsMap.values()));
     }
 
     private String getPickupAtString() {
@@ -351,7 +339,6 @@ public class CreateCustomOrderFragment extends Fragment {
         }
     }
 }
-
 
 
 

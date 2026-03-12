@@ -22,13 +22,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.SelectableItemAdapter;
-import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateCustomOrderRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishStepResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.Constants;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import android.content.res.ColorStateList;
@@ -312,7 +313,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         }
 
         // Collect selections from ALL steps
-        List<CreateCustomOrderRequest.Step> stepsList = new ArrayList<>();
+        List<CreateOrderRequest.Step> stepsList = new ArrayList<>();
         for (DishStepResponse step : steps) {
             int stepId = step.getStepId();
             SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
@@ -321,17 +322,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             List<Integer> selectedItemIds = adapter.getSelectedItemIds();
             if (selectedItemIds.isEmpty()) continue;
 
-            Map<Integer, Double> quantities = adapter.getSelectedQuantities();
-            Map<Integer, String> notes = adapter.getSelectedNotes();
-
-            List<CreateCustomOrderRequest.Item> itemsList = new ArrayList<>();
-            for (Integer itemId : selectedItemIds) {
-                double qty = quantities.getOrDefault(itemId, 1.0);
-                String itemNote = notes.getOrDefault(itemId, "");
-                itemsList.add(new CreateCustomOrderRequest.Item(itemId, qty, itemNote));
-            }
-
-            stepsList.add(new CreateCustomOrderRequest.Step(stepId, selectedItemIds, itemsList));
+            stepsList.add(new CreateOrderRequest.Step(stepId, selectedItemIds));
         }
 
         if (stepsList.isEmpty()) {
@@ -341,19 +332,15 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
         String note = etNote != null ? etNote.getText().toString().trim() : "";
 
-        CreateCustomOrderRequest.CustomDish customDish = new CreateCustomOrderRequest.CustomDish(
+        CreateOrderRequest.CustomDish customDish = new CreateOrderRequest.CustomDish(
                 "Custom Dish",
                 "Tùy chỉnh bởi người dùng",
-                "",
                 stepsList
         );
 
-        CreateCustomOrderRequest request = new CreateCustomOrderRequest(
-                quantity,
-                selectedPickupDateTime,
-                note,
-                customDish
-        );
+        List<CreateOrderRequest.DishInput> dishes = new ArrayList<>();
+        dishes.add(CreateOrderRequest.DishInput.fromCustom(customDish, quantity));
+        CreateOrderRequest request = new CreateOrderRequest(selectedPickupDateTime, note, dishes);
 
         // Show loading
         if (progressCreateOrder != null) {
@@ -367,7 +354,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
         ApiClient.getInstance()
                 .getApiService()
-                .createCustomOrder(token, request)
+                .createOrder(Constants.ORDER_CREATE_URL, token, request)
                 .enqueue(new Callback<BaseResponse<OrderResponse>>() {
             @Override
             public void onResponse(Call<BaseResponse<OrderResponse>> call, Response<BaseResponse<OrderResponse>> response) {
@@ -390,7 +377,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                     } else if (response.errorBody() != null) {
                         try { errorMsg = response.errorBody().string(); } catch (Exception ignored) {}
                     }
-                    Log.e("CreateCustomOrderActivity", "createCustomOrder error: " + errorMsg);
+                    Log.e("CreateCustomOrderActivity", "createOrder error: " + errorMsg);
                     Toast.makeText(CreateCustomOrderActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
@@ -403,7 +390,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                 if (btnCreateOrder != null) {
                     btnCreateOrder.setEnabled(true);
                 }
-                Log.e("CreateCustomOrderActivity", "createCustomOrder failure", t);
+                Log.e("CreateCustomOrderActivity", "createOrder failure", t);
                 Toast.makeText(CreateCustomOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -625,4 +612,3 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         return item.getCalories() * quantity;
     }
 }
-

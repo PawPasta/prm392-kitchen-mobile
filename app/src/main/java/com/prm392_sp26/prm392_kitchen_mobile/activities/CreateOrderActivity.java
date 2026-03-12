@@ -17,18 +17,21 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.prm392_sp26.prm392_kitchen_mobile.R;
-import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderFromDishRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.Constants;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import android.content.Intent;
 import android.util.Log;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -262,12 +265,9 @@ public class CreateOrderActivity extends AppCompatActivity {
 
         String note = etNote != null ? etNote.getText().toString().trim() : "";
 
-        CreateOrderFromDishRequest request = new CreateOrderFromDishRequest(
-                dishId,
-                quantity,
-                selectedPickupDateTime,
-                note
-        );
+        List<CreateOrderRequest.DishInput> dishes = new ArrayList<>();
+        dishes.add(CreateOrderRequest.DishInput.fromDish(dishId, quantity));
+        CreateOrderRequest request = new CreateOrderRequest(selectedPickupDateTime, note, dishes);
 
         // Show loading state
         if (progressCreateOrder != null) {
@@ -281,7 +281,7 @@ public class CreateOrderActivity extends AppCompatActivity {
 
         ApiClient.getInstance()
                 .getApiService()
-                .createOrderFromDish(token, request)
+                .createOrder(Constants.ORDER_CREATE_URL, token, request)
                 .enqueue(new Callback<BaseResponse<OrderResponse>>() {
             @Override
             public void onResponse(Call<BaseResponse<OrderResponse>> call, Response<BaseResponse<OrderResponse>> response) {
@@ -306,7 +306,7 @@ public class CreateOrderActivity extends AppCompatActivity {
                     } else if (response.errorBody() != null) {
                         try { errorMsg = response.errorBody().string(); } catch (Exception ignored) {}
                     }
-                    Log.e("CreateOrderActivity", "createOrderFromDish error: " + errorMsg);
+                    Log.e("CreateOrderActivity", "createOrder error: " + errorMsg);
                     Toast.makeText(CreateOrderActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
@@ -320,7 +320,7 @@ public class CreateOrderActivity extends AppCompatActivity {
                 if (btnCreateOrder != null) {
                     btnCreateOrder.setEnabled(true);
                 }
-                Log.e("CreateOrderActivity", "createOrderFromDish failure", t);
+                Log.e("CreateOrderActivity", "createOrder failure", t);
                 Toast.makeText(CreateOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -365,7 +365,6 @@ public class CreateOrderActivity extends AppCompatActivity {
         finish();
     }
 }
-
 
 
 

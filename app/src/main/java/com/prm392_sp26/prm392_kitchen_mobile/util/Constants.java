@@ -7,6 +7,7 @@ public class Constants {
 
     // Base URL của backend API
     public static final String BASE_URL = "https://chicken-kitchen.milize-lena.space/";
+    public static final String ORDER_CREATE_URL = "https://chicken-kitchen.milize-lena.space/api/orders";
 
     // SharedPreferences keys
     public static final String PREFS_NAME = "prm392_kitchen_prefs";
