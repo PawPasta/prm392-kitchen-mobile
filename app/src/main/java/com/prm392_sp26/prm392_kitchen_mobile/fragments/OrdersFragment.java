@@ -111,7 +111,6 @@ public class OrdersFragment extends Fragment {
 
     private String getStatusFromChipId(int chipId) {
         if (chipId == R.id.chipAll) return null;
-        if (chipId == R.id.chipCreated) return "CREATED";
         if (chipId == R.id.chipConfirmed) return "CONFIRMED";
         if (chipId == R.id.chipProcessing) return "PROCESSING";
         if (chipId == R.id.chipReady) return "READY";
@@ -191,8 +190,7 @@ public class OrdersFragment extends Fragment {
 
                                 android.util.Log.d("OrdersFragment", "Orders count: " + (orders != null ? orders.size() : 0));
 
-                                // Hiển thị tất cả orders bao gồm CREATED (vừa mới tạo)
-                                List<OrderHistoryResponse.OrderItem> displayOrders = orders != null ? orders : new ArrayList<>();
+                                List<OrderHistoryResponse.OrderItem> displayOrders = filterOutCreated(orders);
 
                                 android.util.Log.d("OrdersFragment", "Display orders count: " + displayOrders.size());
 
@@ -334,6 +332,27 @@ public class OrdersFragment extends Fragment {
                         Toast.makeText(requireContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private List<OrderHistoryResponse.OrderItem> filterOutCreated(List<OrderHistoryResponse.OrderItem> orders) {
+        List<OrderHistoryResponse.OrderItem> filtered = new ArrayList<>();
+        if (orders == null || orders.isEmpty()) {
+            return filtered;
+        }
+        for (OrderHistoryResponse.OrderItem item : orders) {
+            if (item == null) {
+                continue;
+            }
+            String status = item.getStatus();
+            if (status == null || status.trim().isEmpty()) {
+                filtered.add(item);
+                continue;
+            }
+            if (!"CREATED".equalsIgnoreCase(status.trim())) {
+                filtered.add(item);
+            }
+        }
+        return filtered;
     }
 
     @Override
