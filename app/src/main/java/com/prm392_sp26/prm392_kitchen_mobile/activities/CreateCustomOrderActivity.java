@@ -293,7 +293,8 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                 selectedItems.add(new CreateOrderRequest.StepItem(itemId, qty, itemNote));
             }
 
-            stepsList.add(new CreateOrderRequest.Step(stepId, selectedItemIds, selectedItems));
+            // Avoid duplicate quantity handling on backend by using detailed items payload only.
+            stepsList.add(new CreateOrderRequest.Step(stepId, new ArrayList<>(), selectedItems));
         }
 
         if (stepsList.isEmpty()) {

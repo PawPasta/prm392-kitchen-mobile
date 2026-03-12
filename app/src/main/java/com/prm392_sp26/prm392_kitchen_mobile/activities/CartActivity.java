@@ -29,7 +29,6 @@ import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -448,14 +447,12 @@ public class CartActivity extends AppCompatActivity {
             int stepId = entry.getKey();
             List<OrderResponse.OrderDishItemDetail> stepItems = entry.getValue();
 
-            Set<Integer> uniqueItemIds = new LinkedHashSet<>();
             List<UpdateOrderDishesRequest.StepItem> mappedItems = new ArrayList<>();
 
             for (OrderResponse.OrderDishItemDetail stepItem : stepItems) {
                 if (stepItem == null || stepItem.getItemId() <= 0) {
                     continue;
                 }
-                uniqueItemIds.add(stepItem.getItemId());
                 mappedItems.add(new UpdateOrderDishesRequest.StepItem(
                         stepItem.getItemId(),
                         stepItem.getQuantity(),
@@ -464,7 +461,7 @@ public class CartActivity extends AppCompatActivity {
 
             steps.add(new UpdateOrderDishesRequest.Step(
                     stepId,
-                    new ArrayList<>(uniqueItemIds),
+                    new ArrayList<>(),
                     mappedItems));
         }
 
