@@ -129,6 +129,9 @@ public class OrderResponse {
         @SerializedName("dishName")
         private String dishName;
 
+        @SerializedName("dishImageUrl")
+        private String dishImageUrl;
+
         @SerializedName("dishStatus")
         private String dishStatus;
 
@@ -169,6 +172,14 @@ public class OrderResponse {
 
         public void setDishName(String dishName) {
             this.dishName = dishName;
+        }
+
+        public String getDishImageUrl() {
+            return dishImageUrl;
+        }
+
+        public void setDishImageUrl(String dishImageUrl) {
+            this.dishImageUrl = dishImageUrl;
         }
 
         public String getDishStatus() {
@@ -233,6 +244,9 @@ public class OrderResponse {
         @SerializedName("itemName")
         private String itemName;
 
+        @SerializedName("itemImageUrl")
+        private String itemImageUrl;
+
         @SerializedName("unit")
         private String unit;
 
@@ -280,6 +294,14 @@ public class OrderResponse {
             this.itemName = itemName;
         }
 
+        public String getItemImageUrl() {
+            return itemImageUrl;
+        }
+
+        public void setItemImageUrl(String itemImageUrl) {
+            this.itemImageUrl = itemImageUrl;
+        }
+
         public String getUnit() {
             return unit;
         }
@@ -321,4 +343,3 @@ public class OrderResponse {
         }
     }
 }
-

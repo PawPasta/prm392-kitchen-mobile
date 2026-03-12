@@ -84,6 +84,14 @@ public interface ApiService {
             @Query("status") String status);
 
     /**
+     * Lấy đơn hàng hiện tại ở trạng thái CREATED của user đang đăng nhập
+     * GET /api/orders/current
+     */
+    @GET("api/orders/current")
+    Call<BaseResponse<OrderResponse>> getCurrentOrder(
+            @Header("Authorization") String authHeader);
+
+    /**
      * Refresh access token khi hết hạn
      * POST /api/auth/refresh-token
      */

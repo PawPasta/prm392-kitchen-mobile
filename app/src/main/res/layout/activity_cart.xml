@@ -104,7 +104,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:text="Chưa có đơn trong giỏ"
+                    android:text="Chưa có món trong giỏ"
                     android:textColor="@color/colorTextSecondary"
                     android:visibility="gone" />
             </FrameLayout>
