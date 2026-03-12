@@ -2,10 +2,9 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
+import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -21,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.OrderHistoryAdapter;
@@ -49,6 +49,7 @@ public class CartActivity extends AppCompatActivity {
     private static final String STATUS_CREATED = "CREATED";
     private static final int SORT_NEWEST = 0;
     private static final int SORT_OLDEST = 1;
+    private static final String DELETE_REASON = "Xóa khỏi giỏ hàng";
     private final int pageSize = 10;
 
     private PrefsManager prefsManager;
@@ -60,11 +61,17 @@ public class CartActivity extends AppCompatActivity {
     private OrderHistoryAdapter adapter;
     private View btnCreateCustomOrder;
     private Spinner spinnerSortTime;
+    private View btnDeleteMode;
+    private View layoutDeleteActions;
+    private CheckBox cbSelectAll;
+    private MaterialButton btnDeleteSelected;
     private final List<OrderHistoryResponse.OrderItem> cachedOrders = new ArrayList<>();
     private int currentSort = SORT_NEWEST;
     private boolean isLoading;
     private boolean isLastPage;
     private int currentPage;
+    private boolean isDeleteMode;
+    private boolean ignoreSelectAllChange;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,8 +93,21 @@ public class CartActivity extends AppCompatActivity {
         swipeRefresh = findViewById(R.id.swipeRefresh);
         btnCreateCustomOrder = findViewById(R.id.btnCreateCustomOrder);
         spinnerSortTime = findViewById(R.id.spinnerSortTime);
+        btnDeleteMode = findViewById(R.id.btnDeleteMode);
+        layoutDeleteActions = findViewById(R.id.layoutDeleteActions);
+        cbSelectAll = findViewById(R.id.cbSelectAll);
+        btnDeleteSelected = findViewById(R.id.btnDeleteSelected);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        if (btnDeleteMode != null) {
+            btnDeleteMode.setOnClickListener(v -> {
+                if (isDeleteMode) {
+                    exitDeleteMode();
+                } else {
+                    enterDeleteMode();
+                }
+            });
+        }
         if (btnCreateCustomOrder != null) {
             btnCreateCustomOrder.setOnClickListener(v -> {
                 android.content.Intent intent = new android.content.Intent(
@@ -98,10 +118,24 @@ public class CartActivity extends AppCompatActivity {
         }
 
         adapter = new OrderHistoryAdapter();
+        adapter.setCancelEnabled(false);
+        adapter.setOnItemClickListener(this::openOrderDetail);
+        adapter.setOnSelectionChangeListener((selectedCount, totalCount, allSelected) ->
+                updateDeleteActionUi(selectedCount, allSelected));
         recyclerOrders.setLayoutManager(new LinearLayoutManager(this));
         recyclerOrders.setAdapter(adapter);
-        adapter.setOnItemClickListener(this::openOrderDetail);
-        adapter.setOnCancelClickListener(this::showCancelReasonDialog);
+
+        if (cbSelectAll != null) {
+            cbSelectAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (ignoreSelectAllChange || !isDeleteMode) {
+                    return;
+                }
+                adapter.setSelectAll(isChecked);
+            });
+        }
+        if (btnDeleteSelected != null) {
+            btnDeleteSelected.setOnClickListener(v -> deleteSelectedOrders());
+        }
 
         setupSortSpinner();
         setupRefresh();
@@ -124,15 +158,15 @@ public class CartActivity extends AppCompatActivity {
                 .enqueue(new Callback<BaseResponse<OrderHistoryResponse>>() {
                     @Override
                     public void onResponse(@NonNull Call<BaseResponse<OrderHistoryResponse>> call,
-                            @NonNull Response<BaseResponse<OrderHistoryResponse>> response) {
+                                           @NonNull Response<BaseResponse<OrderHistoryResponse>> response) {
                         setLoading(false, isLoadMore);
 
                         if (response.isSuccessful() && response.body() != null) {
                             BaseResponse<OrderHistoryResponse> baseResponse = response.body();
                             if (baseResponse.isSuccess() && baseResponse.getData() != null
                                     && baseResponse.getData().getOrders() != null) {
-                                List<OrderHistoryResponse.OrderItem> orders = baseResponse.getData().getOrders()
-                                        .getContent();
+                                List<OrderHistoryResponse.OrderItem> orders =
+                                        baseResponse.getData().getOrders().getContent();
                                 if (page == 0) {
                                     cachedOrders.clear();
                                 }
@@ -156,7 +190,8 @@ public class CartActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onFailure(@NonNull Call<BaseResponse<OrderHistoryResponse>> call, @NonNull Throwable t) {
+                    public void onFailure(@NonNull Call<BaseResponse<OrderHistoryResponse>> call,
+                                          @NonNull Throwable t) {
                         setLoading(false, isLoadMore);
                         Toast.makeText(CartActivity.this,
                                 "Lỗi mạng khi tải giỏ hàng.", Toast.LENGTH_LONG).show();
@@ -192,12 +227,12 @@ public class CartActivity extends AppCompatActivity {
         List<String> options = new ArrayList<>();
         options.add("Mới nhất");
         options.add("Cũ nhất");
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
                 options);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerSortTime.setAdapter(adapter);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSortTime.setAdapter(spinnerAdapter);
         spinnerSortTime.setSelection(currentSort, false);
         spinnerSortTime.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -286,70 +321,134 @@ public class CartActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void showCancelReasonDialog(OrderHistoryResponse.OrderItem item) {
-        if (item == null || item.getOrderId() == null || item.getOrderId().trim().isEmpty()) {
-            Toast.makeText(this, "Không tìm thấy ID đơn hàng", Toast.LENGTH_SHORT).show();
+    private void enterDeleteMode() {
+        if (adapter.getItemCount() == 0) {
+            Toast.makeText(this, "Không có đơn để xóa", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        isDeleteMode = true;
+        adapter.setSelectionMode(true);
+        if (btnCreateCustomOrder != null) {
+            btnCreateCustomOrder.setVisibility(View.GONE);
+        }
+        if (layoutDeleteActions != null) {
+            layoutDeleteActions.setVisibility(View.VISIBLE);
+        }
+        updateDeleteActionUi(0, false);
+    }
+
+    private void exitDeleteMode() {
+        isDeleteMode = false;
+        adapter.setSelectionMode(false);
+        if (layoutDeleteActions != null) {
+            layoutDeleteActions.setVisibility(View.GONE);
+        }
+        if (btnCreateCustomOrder != null) {
+            btnCreateCustomOrder.setVisibility(View.VISIBLE);
+        }
+        if (cbSelectAll != null) {
+            ignoreSelectAllChange = true;
+            cbSelectAll.setChecked(false);
+            ignoreSelectAllChange = false;
+        }
+    }
+
+    private void updateDeleteActionUi(int selectedCount, boolean allSelected) {
+        if (!isDeleteMode) {
+            return;
+        }
+        if (cbSelectAll != null) {
+            ignoreSelectAllChange = true;
+            cbSelectAll.setChecked(allSelected);
+            ignoreSelectAllChange = false;
+        }
+        if (btnDeleteSelected != null) {
+            btnDeleteSelected.setText("Xóa (" + selectedCount + ")");
+            btnDeleteSelected.setEnabled(selectedCount > 0);
+        }
+    }
+
+    private void deleteSelectedOrders() {
+        List<String> selectedIds = adapter.getSelectedOrderIds();
+        if (selectedIds.isEmpty()) {
+            Toast.makeText(this, "Chưa chọn đơn nào", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        EditText input = new EditText(this);
-        input.setHint("Nhập lý do hủy");
-        input.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        android.widget.LinearLayout container = new android.widget.LinearLayout(this);
-        container.setPadding(padding, padding / 2, padding, 0);
-        container.addView(input);
-
-        new android.app.AlertDialog.Builder(this)
-                .setTitle("Lý do hủy đơn")
-                .setView(container)
-                .setPositiveButton("Xác nhận", (dialog, which) -> {
-                    String reason = input.getText().toString().trim();
-                    if (reason.isEmpty()) {
-                        Toast.makeText(this, "Vui lòng nhập lý do hủy", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    cancelOrder(item.getOrderId(), reason);
-                })
-                .setNegativeButton("Không", null)
-                .show();
-    }
-
-    private void cancelOrder(String orderId, String reason) {
         String token = prefsManager.getAccessToken();
         if (token == null || token.trim().isEmpty()) {
             Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
             return;
         }
 
-        ApiClient.getInstance()
-                .getApiService()
-                .cancelOrder("Bearer " + token, orderId, new CancelOrderRequest(reason))
-                .enqueue(new Callback<BaseResponse<OrderResponse>>() {
-                    @Override
-                    public void onResponse(@NonNull Call<BaseResponse<OrderResponse>> call,
-                            @NonNull Response<BaseResponse<OrderResponse>> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                            Toast.makeText(CartActivity.this, "Đã hủy đơn hàng", Toast.LENGTH_SHORT).show();
-                            currentPage = 0;
-                            isLastPage = false;
-                            loadOrders(0, pageSize, false);
-                            return;
-                        }
-                        String msg = "Hủy đơn thất bại";
-                        if (response.body() != null && response.body().getMessage() != null) {
-                            msg = response.body().getMessage();
-                        }
-                        Toast.makeText(CartActivity.this, msg, Toast.LENGTH_LONG).show();
-                    }
+        if (btnDeleteSelected != null) {
+            btnDeleteSelected.setEnabled(false);
+        }
+        if (cbSelectAll != null) {
+            cbSelectAll.setEnabled(false);
+        }
+        if (btnDeleteMode != null) {
+            btnDeleteMode.setEnabled(false);
+        }
 
-                    @Override
-                    public void onFailure(@NonNull Call<BaseResponse<OrderResponse>> call, @NonNull Throwable t) {
-                        Toast.makeText(CartActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+        final int total = selectedIds.size();
+        final int[] completed = {0};
+        final int[] success = {0};
+
+        for (String orderId : selectedIds) {
+            ApiClient.getInstance()
+                    .getApiService()
+                    .cancelOrder("Bearer " + token, orderId, new CancelOrderRequest(DELETE_REASON))
+                    .enqueue(new Callback<BaseResponse<OrderResponse>>() {
+                        @Override
+                        public void onResponse(@NonNull Call<BaseResponse<OrderResponse>> call,
+                                               @NonNull Response<BaseResponse<OrderResponse>> response) {
+                            if (response.isSuccessful()
+                                    && response.body() != null
+                                    && response.body().isSuccess()) {
+                                success[0]++;
+                            }
+                            onDeleteRequestDone(completed, success, total);
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull Call<BaseResponse<OrderResponse>> call,
+                                              @NonNull Throwable t) {
+                            onDeleteRequestDone(completed, success, total);
+                        }
+                    });
+        }
+    }
+
+    private void onDeleteRequestDone(int[] completed, int[] success, int total) {
+        completed[0]++;
+        if (completed[0] < total) {
+            return;
+        }
+
+        if (btnDeleteSelected != null) {
+            btnDeleteSelected.setEnabled(true);
+        }
+        if (cbSelectAll != null) {
+            cbSelectAll.setEnabled(true);
+        }
+        if (btnDeleteMode != null) {
+            btnDeleteMode.setEnabled(true);
+        }
+
+        if (success[0] > 0) {
+            Toast.makeText(this,
+                    "Đã xóa " + success[0] + "/" + total + " đơn",
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this,
+                    "Không thể xóa đơn đã chọn",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        currentPage = 0;
+        isLastPage = false;
+        exitDeleteMode();
+        loadOrders(0, pageSize, false);
     }
 }

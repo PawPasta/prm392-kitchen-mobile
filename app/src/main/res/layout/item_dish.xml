@@ -61,6 +61,17 @@
                 android:ellipsize="end" />
 
             <TextView
+                android:id="@+id/tvDishDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Mô tả món ăn"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="12sp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
                 android:id="@+id/tvDishInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -3,7 +3,6 @@ package com.prm392_sp26.prm392_kitchen_mobile.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -47,6 +46,12 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
         holder.tvName.setText(dish.getName());
 
         holder.tvPrice.setText(CurrencyFormatter.formatVnd(dish.getPrice()));
+        String description = dish.getDescription();
+        if (description == null || description.trim().isEmpty()) {
+            holder.tvDescription.setText("Không có mô tả");
+        } else {
+            holder.tvDescription.setText(description.trim());
+        }
 
         // Hiện calories + status
         String statusEmoji = getStatusEmoji(dish.getStatus());
@@ -106,13 +111,14 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
 
     static class DishViewHolder extends RecyclerView.ViewHolder {
         final ImageView ivDishImage;
-        final TextView tvIcon, tvName, tvInfo, tvPrice;
+        final TextView tvIcon, tvName, tvDescription, tvInfo, tvPrice;
 
         DishViewHolder(@NonNull View itemView) {
             super(itemView);
             ivDishImage = itemView.findViewById(R.id.ivDishImage);
             tvIcon = itemView.findViewById(R.id.tvDishIcon);
             tvName = itemView.findViewById(R.id.tvDishName);
+            tvDescription = itemView.findViewById(R.id.tvDishDescription);
             tvInfo = itemView.findViewById(R.id.tvDishInfo);
             tvPrice = itemView.findViewById(R.id.tvDishPrice);
         }
