@@ -43,9 +43,14 @@ public class StepItemsActivity extends AppCompatActivity {
     private RecyclerView recyclerItems;
     private ProgressBar progressItems;
     private TextView tvEmpty;
-    private TextView tvTitle;
+
+    private View categoryCarb;
+    private View categoryProtein;
+    private View categoryVegetables;
+    private View categorySauce;
+    private View categoryExtra;
+
     private int stepId = 1;
-    private String stepName = "Carb";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,28 +65,75 @@ public class StepItemsActivity extends AppCompatActivity {
         });
 
         prefsManager = PrefsManager.getInstance(this);
-        stepId = getIntent().getIntExtra(EXTRA_STEP_ID, 1);
-        String extraStepName = getIntent().getStringExtra(EXTRA_STEP_NAME);
-        if (extraStepName != null && !extraStepName.trim().isEmpty()) {
-            stepName = extraStepName.trim();
-        }
+        stepId = sanitizeStepId(getIntent().getIntExtra(EXTRA_STEP_ID, 1));
 
-        tvTitle = findViewById(R.id.tvStepTitle);
         recyclerItems = findViewById(R.id.recyclerStepItems);
         progressItems = findViewById(R.id.progressStepItems);
         tvEmpty = findViewById(R.id.tvEmptyStepItems);
         swipeRefresh = findViewById(R.id.swipeRefreshStepItems);
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        categoryCarb = findViewById(R.id.categoryCarb);
+        categoryProtein = findViewById(R.id.categoryProtein);
+        categoryVegetables = findViewById(R.id.categoryVegetables);
+        categorySauce = findViewById(R.id.categorySauce);
+        categoryExtra = findViewById(R.id.categoryExtra);
 
-        tvTitle.setText(stepName);
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         adapter = new StepItemCardAdapter();
         recyclerItems.setLayoutManager(new LinearLayoutManager(this));
         recyclerItems.setAdapter(adapter);
 
+        setupCategoryNavigation();
+        updateCategorySelection();
+
         swipeRefresh.setOnRefreshListener(this::loadItemsByStep);
         loadItemsByStep();
+    }
+
+    private void setupCategoryNavigation() {
+        bindCategoryClick(categoryCarb, 1);
+        bindCategoryClick(categoryProtein, 2);
+        bindCategoryClick(categoryVegetables, 3);
+        bindCategoryClick(categorySauce, 4);
+        bindCategoryClick(categoryExtra, 5);
+    }
+
+    private void bindCategoryClick(View categoryView, int targetStepId) {
+        if (categoryView == null) {
+            return;
+        }
+        categoryView.setOnClickListener(v -> {
+            if (stepId == targetStepId) {
+                return;
+            }
+            stepId = targetStepId;
+            updateCategorySelection();
+            loadItemsByStep();
+        });
+    }
+
+    private void updateCategorySelection() {
+        setCategorySelected(categoryCarb, stepId == 1);
+        setCategorySelected(categoryProtein, stepId == 2);
+        setCategorySelected(categoryVegetables, stepId == 3);
+        setCategorySelected(categorySauce, stepId == 4);
+        setCategorySelected(categoryExtra, stepId == 5);
+    }
+
+    private void setCategorySelected(View categoryView, boolean selected) {
+        if (categoryView == null) {
+            return;
+        }
+        categoryView.setBackgroundResource(
+                selected ? R.drawable.bg_category_tile_selected : R.drawable.bg_category_tile);
+    }
+
+    private int sanitizeStepId(int rawStepId) {
+        if (rawStepId < 1 || rawStepId > 5) {
+            return 1;
+        }
+        return rawStepId;
     }
 
     private void loadItemsByStep() {
@@ -112,7 +164,7 @@ public class StepItemsActivity extends AppCompatActivity {
 
                         showItems(new ArrayList<>());
                         Toast.makeText(StepItemsActivity.this,
-                                "Không tải được danh sách " + stepName,
+                                "Không tải được danh sách item",
                                 Toast.LENGTH_SHORT).show();
                     }
 
@@ -146,7 +198,7 @@ public class StepItemsActivity extends AppCompatActivity {
         recyclerItems.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         if (isEmpty) {
-            tvEmpty.setText("Không có item cho " + stepName);
+            tvEmpty.setText("Không có item cho danh mục này");
         }
     }
 }
