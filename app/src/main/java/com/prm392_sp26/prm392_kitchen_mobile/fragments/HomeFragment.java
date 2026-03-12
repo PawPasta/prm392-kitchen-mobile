@@ -17,6 +17,7 @@ import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -230,6 +231,7 @@ public class HomeFragment extends Fragment {
 
         BannerAdapter bannerAdapter = new BannerAdapter(items);
         bannerPager.setAdapter(bannerAdapter);
+        bannerPager.setPageTransformer(new MarginPageTransformer(dpToPx(12)));
         setupBannerIndicators(items.size());
         updateBannerIndicators(0);
 
