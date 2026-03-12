@@ -1,14 +1,19 @@
 package com.prm392_sp26.prm392_kitchen_mobile.adapters;
 
+import android.content.Context;
+import android.graphics.Typeface;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -20,7 +25,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDishViewHolder> {
 
@@ -126,24 +133,36 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
             notifySelectionChanged();
         });
 
-        boolean expanded = expandedDishKeys.contains(dishKey);
-        holder.tvExpandToggle.setText(expanded ? "Ẩn thành phần ▲" : "Xem thành phần ▼");
-        holder.tvComponents.setVisibility(expanded ? View.VISIBLE : View.GONE);
-        if (expanded) {
-            holder.tvComponents.setText(buildComponentsText(item.getCustomItems()));
-        }
+        boolean isCustomDish = isCustomDish(item);
+        if (!isCustomDish) {
+            expandedDishKeys.remove(dishKey);
+            holder.tvExpandToggle.setVisibility(View.GONE);
+            holder.layoutDishComponents.setVisibility(View.GONE);
+            holder.layoutDishComponents.removeAllViews();
+        } else {
+            holder.tvExpandToggle.setVisibility(View.VISIBLE);
+            boolean expanded = expandedDishKeys.contains(dishKey);
+            holder.tvExpandToggle.setText(expanded ? "Ẩn thành phần ▲" : "Xem thành phần ▼");
+            holder.layoutDishComponents.setVisibility(expanded ? View.VISIBLE : View.GONE);
 
-        holder.tvExpandToggle.setOnClickListener(v -> {
-            if (expandedDishKeys.contains(dishKey)) {
-                expandedDishKeys.remove(dishKey);
+            if (expanded) {
+                renderComponentSteps(holder.layoutDishComponents, item.getCustomItems());
             } else {
-                expandedDishKeys.add(dishKey);
+                holder.layoutDishComponents.removeAllViews();
             }
-            int adapterPosition = holder.getBindingAdapterPosition();
-            if (adapterPosition != RecyclerView.NO_POSITION) {
-                notifyItemChanged(adapterPosition);
-            }
-        });
+
+            holder.tvExpandToggle.setOnClickListener(v -> {
+                if (expandedDishKeys.contains(dishKey)) {
+                    expandedDishKeys.remove(dishKey);
+                } else {
+                    expandedDishKeys.add(dishKey);
+                }
+                int adapterPosition = holder.getBindingAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(adapterPosition);
+                }
+            });
+        }
 
         holder.itemView.setOnClickListener(v -> {
             if (!selectionMode) {
@@ -156,6 +175,13 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    private boolean isCustomDish(OrderResponse.OrderDishDetail dish) {
+        if (dish == null || dish.getDishStatus() == null) {
+            return false;
+        }
+        return "CUSTOM".equalsIgnoreCase(dish.getDishStatus().trim());
     }
 
     private int getDishKey(OrderResponse.OrderDishDetail item, int position) {
@@ -189,44 +215,108 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
                 isAllSelected());
     }
 
-    private String buildComponentsText(List<OrderResponse.OrderDishItemDetail> customItems) {
+    private void renderComponentSteps(
+            LinearLayout container,
+            List<OrderResponse.OrderDishItemDetail> customItems) {
+        container.removeAllViews();
+        Context context = container.getContext();
+
         if (customItems == null || customItems.isEmpty()) {
-            return "Không có thành phần tùy chỉnh.";
+            TextView emptyView = new TextView(context);
+            emptyView.setText("Không có thành phần tùy chỉnh.");
+            emptyView.setTextColor(ContextCompat.getColor(context, R.color.colorTextSecondary));
+            emptyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            container.addView(emptyView);
+            return;
         }
 
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < customItems.size(); i++) {
-            OrderResponse.OrderDishItemDetail component = customItems.get(i);
+        Map<Integer, List<OrderResponse.OrderDishItemDetail>> groupedSteps = new TreeMap<>();
+        for (OrderResponse.OrderDishItemDetail component : customItems) {
             if (component == null) {
                 continue;
             }
-
-            if (builder.length() > 0) {
-                builder.append('\n');
+            int stepId = component.getStepId();
+            if (stepId <= 0) {
+                stepId = Integer.MAX_VALUE;
             }
-
-            builder.append(i + 1)
-                    .append(". ")
-                    .append(nonEmpty(component.getItemName(), "Thành phần"));
-
-            builder.append(" • ")
-                    .append(formatNumber(component.getQuantity()));
-
-            if (!TextUtils.isEmpty(component.getUnit())) {
-                builder.append(" ").append(component.getUnit());
-            }
-
-            builder.append(" • ")
-                    .append(CurrencyFormatter.formatVnd(component.getPrice()));
-
-            if (!TextUtils.isEmpty(component.getNote())) {
-                builder.append(" • ").append(component.getNote().trim());
-            }
+            groupedSteps.computeIfAbsent(stepId, key -> new ArrayList<>()).add(component);
         }
-        if (builder.length() == 0) {
-            return "Không có thành phần tùy chỉnh.";
+
+        if (groupedSteps.isEmpty()) {
+            TextView emptyView = new TextView(context);
+            emptyView.setText("Không có thành phần tùy chỉnh.");
+            emptyView.setTextColor(ContextCompat.getColor(context, R.color.colorTextSecondary));
+            emptyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            container.addView(emptyView);
+            return;
         }
-        return builder.toString();
+
+        int stepNumber = 1;
+        for (Map.Entry<Integer, List<OrderResponse.OrderDishItemDetail>> entry : groupedSteps.entrySet()) {
+            addStepHeader(container, "Bước " + stepNumber);
+            for (OrderResponse.OrderDishItemDetail component : entry.getValue()) {
+                addComponentRow(container, component);
+            }
+            stepNumber++;
+        }
+    }
+
+    private void addStepHeader(LinearLayout container, String title) {
+        Context context = container.getContext();
+        TextView header = new TextView(context);
+        header.setText(title);
+        header.setTextColor(ContextCompat.getColor(context, R.color.colorTextPrimary));
+        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        header.setTypeface(Typeface.DEFAULT_BOLD);
+        header.setBackgroundResource(R.drawable.bg_chip);
+        int horizontalPadding = dp(context, 10);
+        int verticalPadding = dp(context, 4);
+        header.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.topMargin = container.getChildCount() == 0 ? 0 : dp(context, 10);
+        header.setLayoutParams(params);
+        container.addView(header);
+    }
+
+    private void addComponentRow(
+            LinearLayout container,
+            OrderResponse.OrderDishItemDetail component) {
+        Context context = container.getContext();
+        View rowView = LayoutInflater.from(context)
+                .inflate(R.layout.item_cart_component_row, container, false);
+
+        ImageView ivComponentImage = rowView.findViewById(R.id.ivComponentImage);
+        TextView tvComponentName = rowView.findViewById(R.id.tvComponentName);
+        TextView tvComponentQty = rowView.findViewById(R.id.tvComponentQty);
+        TextView tvComponentPrice = rowView.findViewById(R.id.tvComponentPrice);
+
+        tvComponentName.setText(nonEmpty(component.getItemName(), "Thành phần"));
+        tvComponentQty.setText(buildQuantityText(component.getQuantity(), component.getUnit()));
+        tvComponentPrice.setText(CurrencyFormatter.formatVnd(component.getPrice()));
+
+        String imageUrl = component.getItemImageUrl();
+        if (!TextUtils.isEmpty(imageUrl)) {
+            Glide.with(rowView)
+                    .load(imageUrl.trim())
+                    .placeholder(R.drawable.ic_dish)
+                    .error(R.drawable.ic_dish)
+                    .into(ivComponentImage);
+        } else {
+            ivComponentImage.setImageResource(R.drawable.ic_dish);
+        }
+
+        container.addView(rowView);
+    }
+
+    private String buildQuantityText(double quantity, String unit) {
+        String text = formatNumber(quantity);
+        if (!TextUtils.isEmpty(unit)) {
+            text += " " + unit.trim();
+        }
+        return text;
     }
 
     private String formatCalories(double calories) {
@@ -250,6 +340,13 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
         return value.trim();
     }
 
+    private int dp(Context context, int value) {
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                value,
+                context.getResources().getDisplayMetrics());
+    }
+
     static class CartDishViewHolder extends RecyclerView.ViewHolder {
         private final CheckBox cbSelectDish;
         private final ImageView ivDish;
@@ -257,7 +354,7 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
         private final TextView tvDishMeta;
         private final TextView tvDishPrice;
         private final TextView tvExpandToggle;
-        private final TextView tvComponents;
+        private final LinearLayout layoutDishComponents;
 
         CartDishViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -267,7 +364,7 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
             tvDishMeta = itemView.findViewById(R.id.tvDishMeta);
             tvDishPrice = itemView.findViewById(R.id.tvDishPrice);
             tvExpandToggle = itemView.findViewById(R.id.tvExpandToggle);
-            tvComponents = itemView.findViewById(R.id.tvDishComponents);
+            layoutDishComponents = itemView.findViewById(R.id.layoutDishComponents);
         }
     }
 }
