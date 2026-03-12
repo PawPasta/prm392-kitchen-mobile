@@ -109,8 +109,8 @@
 
                     <LinearLayout
                         android:id="@+id/categoryCarb"
-                        android:layout_width="86dp"
-                        android:layout_height="74dp"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
                         android:layout_marginHorizontal="4dp"
                         android:background="@drawable/bg_category_tile"
                         android:gravity="center"
@@ -122,8 +122,8 @@
 
                     <LinearLayout
                         android:id="@+id/categoryProtein"
-                        android:layout_width="86dp"
-                        android:layout_height="74dp"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
                         android:layout_marginHorizontal="4dp"
                         android:background="@drawable/bg_category_tile"
                         android:gravity="center"
@@ -135,21 +135,21 @@
 
                     <LinearLayout
                         android:id="@+id/categoryVegetables"
-                        android:layout_width="86dp"
-                        android:layout_height="74dp"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
                         android:layout_marginHorizontal="4dp"
                         android:background="@drawable/bg_category_tile"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="2dp">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🥦" android:textSize="24sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Vegetables" android:textColor="@color/colorTextPrimary" android:textSize="10sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="Vegetables" android:textColor="@color/colorTextPrimary" android:textSize="9sp" android:maxLines="2" android:gravity="center" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/categorySauce"
-                        android:layout_width="86dp"
-                        android:layout_height="74dp"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
                         android:layout_marginHorizontal="4dp"
                         android:background="@drawable/bg_category_tile"
                         android:gravity="center"
@@ -161,8 +161,8 @@
 
                     <LinearLayout
                         android:id="@+id/categoryExtra"
-                        android:layout_width="86dp"
-                        android:layout_height="74dp"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
                         android:layout_marginHorizontal="4dp"
                         android:background="@drawable/bg_category_tile"
                         android:gravity="center"

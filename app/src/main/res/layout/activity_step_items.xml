@@ -38,21 +38,11 @@
             android:layout_height="40dp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvStepSubtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:layout_marginTop="6dp"
-        android:text="Step 1"
-        android:textColor="@color/colorTextSecondary"
-        android:textSize="13sp" />
-
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshStepItems"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:layout_weight="1">
 
         <FrameLayout
@@ -62,7 +52,10 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerStepItems"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp" />
 
             <TextView
                 android:id="@+id/tvEmptyStepItems"

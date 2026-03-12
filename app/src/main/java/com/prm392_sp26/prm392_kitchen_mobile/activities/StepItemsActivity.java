@@ -67,7 +67,6 @@ public class StepItemsActivity extends AppCompatActivity {
         }
 
         tvTitle = findViewById(R.id.tvStepTitle);
-        TextView tvSubtitle = findViewById(R.id.tvStepSubtitle);
         recyclerItems = findViewById(R.id.recyclerStepItems);
         progressItems = findViewById(R.id.progressStepItems);
         tvEmpty = findViewById(R.id.tvEmptyStepItems);
@@ -76,7 +75,6 @@ public class StepItemsActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         tvTitle.setText(stepName);
-        tvSubtitle.setText("Step " + stepId);
 
         adapter = new StepItemCardAdapter();
         recyclerItems.setLayoutManager(new LinearLayoutManager(this));
