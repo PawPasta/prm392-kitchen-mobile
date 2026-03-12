@@ -279,7 +279,21 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
             List<Integer> selectedItemIds = adapter.getSelectedItemIds();
             if (selectedItemIds.isEmpty()) continue;
 
-            stepsList.add(new CreateOrderRequest.Step(stepId, selectedItemIds));
+            Map<Integer, Double> selectedQuantities = adapter.getSelectedQuantities();
+            Map<Integer, String> selectedNotes = adapter.getSelectedNotes();
+            List<CreateOrderRequest.StepItem> selectedItems = new ArrayList<>();
+
+            for (Integer itemId : selectedItemIds) {
+                ItemResponse item = getItemById(stepId, itemId);
+                double defaultQty = item != null && item.getBaseQuantity() > 0
+                        ? item.getBaseQuantity()
+                        : 50.0;
+                double qty = selectedQuantities.getOrDefault(itemId, defaultQty);
+                String itemNote = selectedNotes.getOrDefault(itemId, "");
+                selectedItems.add(new CreateOrderRequest.StepItem(itemId, qty, itemNote));
+            }
+
+            stepsList.add(new CreateOrderRequest.Step(stepId, selectedItemIds, selectedItems));
         }
 
         if (stepsList.isEmpty()) {

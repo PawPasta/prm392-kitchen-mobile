@@ -145,9 +145,17 @@ public class CreateOrderRequest {
         @SerializedName("itemIds")
         private List<Integer> itemIds;
 
+        @SerializedName("items")
+        private List<StepItem> items;
+
         public Step(int stepId, List<Integer> itemIds) {
+            this(stepId, itemIds, null);
+        }
+
+        public Step(int stepId, List<Integer> itemIds, List<StepItem> items) {
             this.stepId = stepId;
             this.itemIds = itemIds;
+            this.items = items;
         }
 
         public int getStepId() {
@@ -164,6 +172,55 @@ public class CreateOrderRequest {
 
         public void setItemIds(List<Integer> itemIds) {
             this.itemIds = itemIds;
+        }
+
+        public List<StepItem> getItems() {
+            return items;
+        }
+
+        public void setItems(List<StepItem> items) {
+            this.items = items;
+        }
+    }
+
+    public static class StepItem {
+        @SerializedName("itemId")
+        private int itemId;
+
+        @SerializedName("quantity")
+        private double quantity;
+
+        @SerializedName("note")
+        private String note;
+
+        public StepItem(int itemId, double quantity, String note) {
+            this.itemId = itemId;
+            this.quantity = quantity;
+            this.note = note;
+        }
+
+        public int getItemId() {
+            return itemId;
+        }
+
+        public void setItemId(int itemId) {
+            this.itemId = itemId;
+        }
+
+        public double getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(double quantity) {
+            this.quantity = quantity;
+        }
+
+        public String getNote() {
+            return note;
+        }
+
+        public void setNote(String note) {
+            this.note = note;
         }
     }
 }
