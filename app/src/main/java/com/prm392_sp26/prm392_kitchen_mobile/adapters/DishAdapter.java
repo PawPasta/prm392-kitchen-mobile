@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import java.util.List;
 
@@ -57,19 +58,13 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
         String statusEmoji = getStatusEmoji(dish.getStatus());
         holder.tvInfo.setText("🔥 " + (int) dish.getCalories() + " kcal  •  " + statusEmoji);
 
-        String imageUrl = dish.getImageUrl();
-        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-            holder.ivDishImage.setVisibility(View.GONE);
-            holder.tvIcon.setVisibility(View.VISIBLE);
-            holder.tvIcon.setText(getDishEmoji(dish.getName()));
-        } else {
-            holder.tvIcon.setVisibility(View.GONE);
-            holder.ivDishImage.setVisibility(View.VISIBLE);
-            Glide.with(holder.itemView)
-                .load(imageUrl.trim())
-                .centerCrop()
-                .into(holder.ivDishImage);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveDishImageUrl(dish.getImageUrl());
+        holder.tvIcon.setVisibility(View.GONE);
+        holder.ivDishImage.setVisibility(View.VISIBLE);
+        Glide.with(holder.itemView)
+            .load(imageUrl)
+            .centerCrop()
+            .into(holder.ivDishImage);
         // Click vào món → gọi listener
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onDishClick(dish);

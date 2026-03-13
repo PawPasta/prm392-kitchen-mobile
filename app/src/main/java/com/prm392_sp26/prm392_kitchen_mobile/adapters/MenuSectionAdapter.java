@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -185,19 +186,13 @@ public class MenuSectionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             }
             tvInfo.setText(info);
 
-            String imageUrl = dish.getImageUrl();
-            if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                ivDishImage.setVisibility(View.GONE);
-                tvIcon.setVisibility(View.VISIBLE);
-                tvIcon.setText(getDishEmoji(dish.getName()));
-            } else {
-                tvIcon.setVisibility(View.GONE);
-                ivDishImage.setVisibility(View.VISIBLE);
-                Glide.with(itemView)
-                    .load(imageUrl.trim())
-                    .centerCrop()
-                    .into(ivDishImage);
-            }
+            String imageUrl = PlaceholderImageResolver.resolveDishImageUrl(dish.getImageUrl());
+            tvIcon.setVisibility(View.GONE);
+            ivDishImage.setVisibility(View.VISIBLE);
+            Glide.with(itemView)
+                .load(imageUrl)
+                .centerCrop()
+                .into(ivDishImage);
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

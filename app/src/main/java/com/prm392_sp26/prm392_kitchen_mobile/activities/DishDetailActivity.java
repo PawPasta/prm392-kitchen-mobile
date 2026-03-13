@@ -32,6 +32,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.Constants;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,18 +147,13 @@ public class DishDetailActivity extends AppCompatActivity {
         currentDish = dish;
         tvName.setText(dish.getName());
         tvDescription.setText(dish.getDescription() != null ? dish.getDescription() : "");
-        String imageUrl = dish.getImageUrl();
-        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-            ivDishImage.setVisibility(View.GONE);
-            tvEmoji.setVisibility(View.VISIBLE);
-        } else {
-            tvEmoji.setVisibility(View.GONE);
-            ivDishImage.setVisibility(View.VISIBLE);
-            Glide.with(this)
-                .load(imageUrl.trim())
-                .centerCrop()
-                .into(ivDishImage);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveDishImageUrl(dish.getImageUrl());
+        tvEmoji.setVisibility(View.GONE);
+        ivDishImage.setVisibility(View.VISIBLE);
+        Glide.with(this)
+            .load(imageUrl)
+            .centerCrop()
+            .into(ivDishImage);
 
         tvPrice.setText(CurrencyFormatter.formatVnd(dish.getPrice()));
         tvCalories.setText("🔥 " + (int) dish.getCalories() + " kcal");

@@ -25,6 +25,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.util.ArrayList;
@@ -164,16 +165,16 @@ public class ItemDetailActivity extends AppCompatActivity {
         tvCreated.setText("Created: " + nonEmpty(item.getCreatedAt(), "--"));
         tvUpdated.setText("Updated: " + nonEmpty(item.getUpdatedAt(), "--"));
 
-        if (item.getImageUrl() == null || item.getImageUrl().trim().isEmpty()) {
-            ivImage.setImageResource(R.drawable.ic_dish);
-        } else {
-            Glide.with(this)
-                    .load(item.getImageUrl().trim())
-                    .placeholder(R.drawable.ic_dish)
-                    .error(R.drawable.ic_dish)
-                    .centerCrop()
-                    .into(ivImage);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(
+                item.getImageUrl(),
+                item.getStepId(),
+                item.getStepName());
+        Glide.with(this)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_dish)
+                .error(R.drawable.ic_dish)
+                .centerCrop()
+                .into(ivImage);
 
         if (item.getNutrients() == null || item.getNutrients().isEmpty()) {
             nutrientAdapter.setItems(new ArrayList<>());

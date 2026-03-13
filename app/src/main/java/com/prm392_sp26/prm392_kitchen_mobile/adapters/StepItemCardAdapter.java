@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,19 +66,13 @@ public class StepItemCardAdapter extends RecyclerView.Adapter<StepItemCardAdapte
         boolean enabled = status == null || "ENABLE".equalsIgnoreCase(status.trim());
         holder.itemView.setAlpha(enabled ? 1.0f : 0.68f);
 
-        String imageUrl = item.getImageUrl();
-        if (TextUtils.isEmpty(imageUrl)) {
-            holder.ivImage.setVisibility(View.GONE);
-            holder.tvEmoji.setVisibility(View.VISIBLE);
-            holder.tvEmoji.setText(getItemEmoji(item));
-        } else {
-            holder.tvEmoji.setVisibility(View.GONE);
-            holder.ivImage.setVisibility(View.VISIBLE);
-            Glide.with(holder.itemView)
-                    .load(imageUrl.trim())
-                    .centerCrop()
-                    .into(holder.ivImage);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(item);
+        holder.tvEmoji.setVisibility(View.GONE);
+        holder.ivImage.setVisibility(View.VISIBLE);
+        Glide.with(holder.itemView)
+                .load(imageUrl)
+                .centerCrop()
+                .into(holder.ivImage);
 
         holder.itemView.setOnClickListener(v -> {
             if (onItemClickListener != null) {

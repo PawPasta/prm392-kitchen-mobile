@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -108,16 +109,12 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
         holder.tvDishMeta.setText("Số lượng: " + item.getQuantity() + " • " + formatCalories(item.getDishCalories()));
         holder.tvDishPrice.setText(CurrencyFormatter.formatVnd(item.getLineTotal()));
 
-        String imageUrl = item.getDishImageUrl();
-        if (!TextUtils.isEmpty(imageUrl)) {
-            Glide.with(holder.itemView)
-                    .load(imageUrl.trim())
-                    .placeholder(R.drawable.ic_dish)
-                    .error(R.drawable.ic_dish)
-                    .into(holder.ivDish);
-        } else {
-            holder.ivDish.setImageResource(R.drawable.ic_dish);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveDishImageUrl(item.getDishImageUrl());
+        Glide.with(holder.itemView)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_dish)
+                .error(R.drawable.ic_dish)
+                .into(holder.ivDish);
 
         int dishKey = getDishKey(item, position);
 
@@ -297,16 +294,15 @@ public class CartDishAdapter extends RecyclerView.Adapter<CartDishAdapter.CartDi
         tvComponentQty.setText(buildQuantityText(component.getQuantity(), component.getUnit()));
         tvComponentPrice.setText(CurrencyFormatter.formatVnd(component.getPrice()));
 
-        String imageUrl = component.getItemImageUrl();
-        if (!TextUtils.isEmpty(imageUrl)) {
-            Glide.with(rowView)
-                    .load(imageUrl.trim())
-                    .placeholder(R.drawable.ic_dish)
-                    .error(R.drawable.ic_dish)
-                    .into(ivComponentImage);
-        } else {
-            ivComponentImage.setImageResource(R.drawable.ic_dish);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(
+                component.getItemImageUrl(),
+                component.getStepId(),
+                null);
+        Glide.with(rowView)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_dish)
+                .error(R.drawable.ic_dish)
+                .into(ivComponentImage);
 
         container.addView(rowView);
     }

@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import java.util.List;
 
@@ -40,15 +41,11 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
         holder.tvPrice.setText(CurrencyFormatter.formatVnd(item.getPrice()));
 
-        String imageUrl = item.getImageUrl();
-        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-            holder.ivItemImage.setImageDrawable(null);
-        } else {
-            Glide.with(holder.itemView)
-                .load(imageUrl.trim())
-                .centerCrop()
-                .into(holder.ivItemImage);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(item);
+        Glide.with(holder.itemView)
+            .load(imageUrl)
+            .centerCrop()
+            .into(holder.ivItemImage);
     }
 
     @Override

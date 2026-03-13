@@ -18,6 +18,7 @@ import com.google.android.material.button.MaterialButton;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 
 import android.content.res.ColorStateList;
 import java.util.HashMap;
@@ -81,16 +82,12 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         ViewCompat.setBackgroundTintList(holder.tvTag, ColorStateList.valueOf(stepColor));
         ViewCompat.setBackgroundTintList(holder.viewAccent, ColorStateList.valueOf(stepColor));
 
-        String imageUrl = item.getImageUrl();
-        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-            holder.ivItemImage.setVisibility(View.GONE);
-        } else {
-            holder.ivItemImage.setVisibility(View.VISIBLE);
-            Glide.with(holder.itemView)
-                .load(imageUrl.trim())
-                .centerCrop()
-                .into(holder.ivItemImage);
-        }
+        String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(item);
+        holder.ivItemImage.setVisibility(View.VISIBLE);
+        Glide.with(holder.itemView)
+            .load(imageUrl)
+            .centerCrop()
+            .into(holder.ivItemImage);
 
         // Disable item nếu không phải ENABLE
         boolean isEnabled = "ENABLE".equals(item.getStatus());
