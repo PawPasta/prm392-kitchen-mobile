@@ -71,10 +71,14 @@ public class StepItemsActivity extends AppCompatActivity {
     private View categoryExtra;
 
     private final Set<Integer> selectedStepIds = new LinkedHashSet<>();
+    private final Map<Integer, Integer> nextPageByStepId = new LinkedHashMap<>();
+    private final Map<Integer, Boolean> hasMoreByStepId = new LinkedHashMap<>();
+    private final List<ItemResponse> loadedCategoryItems = new ArrayList<>();
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable pendingSearchRunnable;
     private Call<BaseResponse<SearchResponse>> searchCall;
     private int loadSessionId = 0;
+    private boolean isLoadingMoreCategoryItems = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +127,7 @@ public class StepItemsActivity extends AppCompatActivity {
         concatAdapter = new ConcatAdapter(dishAdapter, itemAdapter);
         recyclerItems.setLayoutManager(new LinearLayoutManager(this));
         recyclerItems.setAdapter(concatAdapter);
+        setupPaginationScroll();
 
         setupCategoryNavigation();
         setupSearchInput();
@@ -206,15 +211,43 @@ public class StepItemsActivity extends AppCompatActivity {
         });
     }
 
+    private void setupPaginationScroll() {
+        recyclerItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy <= 0 || !shouldLoadNextCategoryPages()) {
+                    return;
+                }
+
+                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+                if (!(layoutManager instanceof LinearLayoutManager)) {
+                    return;
+                }
+                LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+                int lastVisible = linearLayoutManager.findLastVisibleItemPosition();
+                int totalItems = concatAdapter.getItemCount();
+                if (totalItems == 0) {
+                    return;
+                }
+                if (lastVisible >= totalItems - 2) {
+                    loadNextCategoryPages();
+                }
+            }
+        });
+    }
+
     private void reloadContentForCurrentState() {
         String keyword = getSearchKeyword();
         if (keyword.isEmpty()) {
             if (selectedStepIds.isEmpty()) {
+                clearCategoryPaginationState();
                 loadAvailableDishes();
             } else {
                 loadItemsForSelectedSteps();
             }
         } else {
+            clearCategoryPaginationState();
             searchByKeyword(keyword);
         }
     }
@@ -372,18 +405,116 @@ public class StepItemsActivity extends AppCompatActivity {
             return;
         }
 
-        List<Integer> steps = new ArrayList<>(selectedStepIds);
-        setLoading(true);
+        initializeCategoryPaginationState();
+        loadCategoryItemsPageBatch(sessionId, "Bearer " + token, false);
+    }
 
-        List<ItemResponse> mergedItems = new ArrayList<>();
-        final int totalRequests = steps.size();
+    private void loadNextCategoryPages() {
+        if (isLoadingMoreCategoryItems || !hasAnyRemainingCategoryPages()) {
+            return;
+        }
+
+        String keyword = getSearchKeyword();
+        if (!keyword.isEmpty()) {
+            return;
+        }
+
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        loadCategoryItemsPageBatch(loadSessionId, "Bearer " + token, true);
+    }
+
+    private void initializeCategoryPaginationState() {
+        nextPageByStepId.clear();
+        hasMoreByStepId.clear();
+        loadedCategoryItems.clear();
+        isLoadingMoreCategoryItems = false;
+        for (Integer stepId : selectedStepIds) {
+            nextPageByStepId.put(stepId, 0);
+            hasMoreByStepId.put(stepId, true);
+        }
+    }
+
+    private void clearCategoryPaginationState() {
+        nextPageByStepId.clear();
+        hasMoreByStepId.clear();
+        loadedCategoryItems.clear();
+        isLoadingMoreCategoryItems = false;
+    }
+
+    private boolean shouldLoadNextCategoryPages() {
+        if (isLoadingMoreCategoryItems) {
+            return false;
+        }
+        if (recyclerItems.getVisibility() != View.VISIBLE) {
+            return false;
+        }
+        if (!getSearchKeyword().isEmpty()) {
+            return false;
+        }
+        if (selectedStepIds.isEmpty()) {
+            return false;
+        }
+        return hasAnyRemainingCategoryPages();
+    }
+
+    private boolean hasAnyRemainingCategoryPages() {
+        for (Integer stepId : selectedStepIds) {
+            if (Boolean.TRUE.equals(hasMoreByStepId.get(stepId))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void loadCategoryItemsPageBatch(int sessionId, String bearerToken, boolean appendMode) {
+        if (sessionId != loadSessionId) {
+            return;
+        }
+
+        List<Integer> stepsToLoad = new ArrayList<>();
+        Map<Integer, Integer> pageByStep = new LinkedHashMap<>();
+        for (Integer stepId : selectedStepIds) {
+            if (!Boolean.TRUE.equals(hasMoreByStepId.get(stepId))) {
+                continue;
+            }
+            Integer page = nextPageByStepId.get(stepId);
+            if (page == null) {
+                page = 0;
+                nextPageByStepId.put(stepId, page);
+            }
+            stepsToLoad.add(stepId);
+            pageByStep.put(stepId, page);
+        }
+
+        if (stepsToLoad.isEmpty()) {
+            isLoadingMoreCategoryItems = false;
+            if (!appendMode) {
+                setLoading(false);
+                showCategoryItems(new ArrayList<>(loadedCategoryItems));
+            }
+            return;
+        }
+
+        isLoadingMoreCategoryItems = true;
+        if (!appendMode) {
+            setLoading(true);
+        }
+
+        final List<ItemResponse> batchItems = new ArrayList<>();
+        final int totalRequests = stepsToLoad.size();
         final int[] finishedRequests = {0};
         final int[] failedRequests = {0};
 
-        for (Integer stepId : steps) {
+        for (Integer stepId : stepsToLoad) {
+            int page = pageByStep.get(stepId);
             ApiClient.getInstance()
                     .getApiService()
-                    .getItemsByStep("Bearer " + token, stepId, 0, PAGE_SIZE)
+                    .getItemsByStep(bearerToken, stepId, page, PAGE_SIZE)
                     .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
                         @Override
                         public void onResponse(
@@ -394,18 +525,24 @@ public class StepItemsActivity extends AppCompatActivity {
                             }
                             if (response.isSuccessful() && response.body() != null
                                     && response.body().isSuccess()
-                                    && response.body().getData() != null
-                                    && response.body().getData().getContent() != null) {
-                                mergedItems.addAll(response.body().getData().getContent());
+                                    && response.body().getData() != null) {
+                                PageResponse<ItemResponse> pageData = response.body().getData();
+                                List<ItemResponse> content = pageData.getContent();
+                                if (content != null && !content.isEmpty()) {
+                                    batchItems.addAll(content);
+                                }
+                                hasMoreByStepId.put(stepId, !pageData.isLast());
+                                nextPageByStepId.put(stepId, page + 1);
                             } else {
                                 failedRequests[0]++;
                             }
-                            onStepItemsRequestFinished(
+                            onCategoryItemsBatchRequestFinished(
                                     sessionId,
+                                    appendMode,
                                     finishedRequests,
                                     totalRequests,
                                     failedRequests[0],
-                                    mergedItems);
+                                    batchItems);
                         }
 
                         @Override
@@ -416,23 +553,25 @@ public class StepItemsActivity extends AppCompatActivity {
                                 return;
                             }
                             failedRequests[0]++;
-                            onStepItemsRequestFinished(
+                            onCategoryItemsBatchRequestFinished(
                                     sessionId,
+                                    appendMode,
                                     finishedRequests,
                                     totalRequests,
                                     failedRequests[0],
-                                    mergedItems);
+                                    batchItems);
                         }
                     });
         }
     }
 
-    private void onStepItemsRequestFinished(
+    private void onCategoryItemsBatchRequestFinished(
             int sessionId,
+            boolean appendMode,
             int[] finishedRequests,
             int totalRequests,
             int failedRequests,
-            List<ItemResponse> mergedItems) {
+            List<ItemResponse> batchItems) {
         if (sessionId != loadSessionId) {
             return;
         }
@@ -441,8 +580,20 @@ public class StepItemsActivity extends AppCompatActivity {
             return;
         }
 
-        setLoading(false);
-        showCategoryItems(deduplicateByItemId(mergedItems));
+        isLoadingMoreCategoryItems = false;
+        if (!appendMode) {
+            setLoading(false);
+            loadedCategoryItems.clear();
+        }
+
+        if (batchItems != null && !batchItems.isEmpty()) {
+            loadedCategoryItems.addAll(batchItems);
+            List<ItemResponse> deduplicatedItems = deduplicateByItemId(loadedCategoryItems);
+            loadedCategoryItems.clear();
+            loadedCategoryItems.addAll(deduplicatedItems);
+        }
+
+        showCategoryItems(new ArrayList<>(loadedCategoryItems));
         if (failedRequests > 0) {
             Toast.makeText(this,
                     "Một số danh mục tải thất bại",
