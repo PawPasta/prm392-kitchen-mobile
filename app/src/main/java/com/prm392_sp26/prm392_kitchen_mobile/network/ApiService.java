@@ -2,6 +2,7 @@ package com.prm392_sp26.prm392_kitchen_mobile.network;
 
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderFeedbackRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.MomoCallbackRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.OrderCheckoutRequest;
@@ -13,6 +14,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.MomoCallbackResponse
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderCheckoutResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderFeedbackResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
@@ -106,6 +108,17 @@ public interface ApiService {
     Call<BaseResponse<OrderResponse>> getOrderById(
             @Header("Authorization") String authHeader,
             @Path("orderId") String orderId);
+
+    @GET("api/orders/{orderId}/feedback")
+    Call<BaseResponse<OrderFeedbackResponse>> getOrderFeedback(
+            @Header("Authorization") String authHeader,
+            @Path("orderId") String orderId);
+
+    @POST("api/orders/{orderId}/feedback")
+    Call<BaseResponse<OrderFeedbackResponse>> submitOrderFeedback(
+            @Header("Authorization") String authHeader,
+            @Path("orderId") String orderId,
+            @Body CreateOrderFeedbackRequest request);
 
     /**
      * Refresh access token khi hết hạn

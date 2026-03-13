@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,8 +31,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.CheckoutDishAdapter;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderFeedbackRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderFeedbackResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
@@ -54,6 +57,7 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_ORDER_ID = "extra_order_id";
     public static final String EXTRA_ORDER_JSON = "order_json";
+    public static final String EXTRA_SCROLL_TO_FEEDBACK = "extra_scroll_to_feedback";
 
     private TextView tvOrderId;
     private TextView tvStatus;
@@ -69,7 +73,13 @@ public class OrderDetailActivity extends AppCompatActivity {
     private TextView tvDishesEmpty;
     private LinearLayout timelineContainer;
     private RecyclerView rvDishes;
+    private View cardOrderFeedback;
+    private RatingBar ratingOrderFeedback;
+    private EditText etOrderFeedbackTitle;
+    private EditText etOrderFeedbackContent;
+    private Button btnSubmitOrderFeedback;
     private Button btnCancelOrder;
+    private ProgressBar progressFeedback;
     private ProgressBar progressCancelOrder;
     private ProgressBar progressOrderDetail;
 
@@ -77,12 +87,14 @@ public class OrderDetailActivity extends AppCompatActivity {
     private String currentOrderId;
     private String currentOrderUserId = "";
     private UserProfile currentUserProfile;
+    private boolean shouldOpenFeedbackSection;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_order_detail);
+        shouldOpenFeedbackSection = getIntent().getBooleanExtra(EXTRA_SCROLL_TO_FEEDBACK, false);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.orderDetailMain), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -94,6 +106,7 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         btnCancelOrder.setOnClickListener(v -> confirmCancel());
+        btnSubmitOrderFeedback.setOnClickListener(v -> submitFeedback());
 
         String orderId = resolveOrderId();
         if (orderId.isEmpty()) {
@@ -121,6 +134,12 @@ public class OrderDetailActivity extends AppCompatActivity {
         tvDishesEmpty = findViewById(R.id.tvOrderDetailDishesEmpty);
         timelineContainer = findViewById(R.id.timelineContainer);
         rvDishes = findViewById(R.id.rvOrderDetailDishes);
+        cardOrderFeedback = findViewById(R.id.cardOrderFeedback);
+        ratingOrderFeedback = findViewById(R.id.ratingOrderFeedback);
+        etOrderFeedbackTitle = findViewById(R.id.etOrderFeedbackTitle);
+        etOrderFeedbackContent = findViewById(R.id.etOrderFeedbackContent);
+        btnSubmitOrderFeedback = findViewById(R.id.btnSubmitOrderFeedback);
+        progressFeedback = findViewById(R.id.progressFeedback);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
         progressCancelOrder = findViewById(R.id.progressCancelOrder);
         progressOrderDetail = findViewById(R.id.progressOrderDetail);
@@ -252,6 +271,13 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         renderTimeline(status);
         renderDishes(order);
+
+        if (isCompletedStatus(status)) {
+            showFeedbackSection();
+            loadOrderFeedback(currentOrderId);
+        } else {
+            hideFeedbackSection();
+        }
 
         btnCancelOrder.setVisibility(canCancelOrder(status) ? View.VISIBLE : View.GONE);
     }
@@ -391,6 +417,198 @@ public class OrderDetailActivity extends AppCompatActivity {
         tvDishesEmpty.setVisibility(View.GONE);
         rvDishes.setVisibility(View.VISIBLE);
         dishAdapter.setItems(order.getDishes());
+    }
+
+    private boolean isCompletedStatus(String status) {
+        return "COMPLETED".equalsIgnoreCase(safeText(status));
+    }
+
+    private void showFeedbackSection() {
+        if (cardOrderFeedback != null) {
+            cardOrderFeedback.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideFeedbackSection() {
+        if (cardOrderFeedback != null) {
+            cardOrderFeedback.setVisibility(View.GONE);
+        }
+        if (progressFeedback != null) {
+            progressFeedback.setVisibility(View.GONE);
+        }
+        clearFeedbackForm();
+    }
+
+    private void clearFeedbackForm() {
+        if (ratingOrderFeedback != null) {
+            ratingOrderFeedback.setRating(0f);
+        }
+        if (etOrderFeedbackTitle != null) {
+            etOrderFeedbackTitle.setText("");
+        }
+        if (etOrderFeedbackContent != null) {
+            etOrderFeedbackContent.setText("");
+        }
+    }
+
+    private void loadOrderFeedback(String orderId) {
+        String token = PrefsManager.getInstance(this).getAccessToken();
+        if (token == null || token.trim().isEmpty() || orderId == null || orderId.trim().isEmpty()) {
+            bindFeedbackData(null, false);
+            return;
+        }
+
+        setFeedbackLoading(true);
+        ApiClient.getInstance()
+                .getApiService()
+                .getOrderFeedback("Bearer " + token, orderId)
+                .enqueue(new Callback<BaseResponse<OrderFeedbackResponse>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<BaseResponse<OrderFeedbackResponse>> call,
+                                           @NonNull Response<BaseResponse<OrderFeedbackResponse>> response) {
+                        setFeedbackLoading(false);
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            bindFeedbackData(response.body().getData(), true);
+                            return;
+                        }
+                        bindFeedbackData(null, false);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<BaseResponse<OrderFeedbackResponse>> call,
+                                          @NonNull Throwable t) {
+                        setFeedbackLoading(false);
+                        bindFeedbackData(null, false);
+                    }
+                });
+    }
+
+    private void bindFeedbackData(@Nullable OrderFeedbackResponse feedback, boolean hasFeedback) {
+        if (feedback == null || !hasFeedback) {
+            clearFeedbackForm();
+            setFeedbackReadOnly(false);
+            scrollToFeedbackSectionIfNeeded();
+            return;
+        }
+
+        int rating = feedback.getRating();
+        if (rating < 0) {
+            rating = 0;
+        }
+        if (rating > 5) {
+            rating = 5;
+        }
+        ratingOrderFeedback.setRating((float) rating);
+        etOrderFeedbackTitle.setText(safeText(feedback.getTitle()));
+        etOrderFeedbackContent.setText(safeText(feedback.getContent()));
+        setFeedbackReadOnly(true);
+        scrollToFeedbackSectionIfNeeded();
+    }
+
+    private void setFeedbackReadOnly(boolean readOnly) {
+        ratingOrderFeedback.setIsIndicator(readOnly);
+        etOrderFeedbackTitle.setEnabled(!readOnly);
+        etOrderFeedbackTitle.setFocusable(!readOnly);
+        etOrderFeedbackTitle.setFocusableInTouchMode(!readOnly);
+        etOrderFeedbackContent.setEnabled(!readOnly);
+        etOrderFeedbackContent.setFocusable(!readOnly);
+        etOrderFeedbackContent.setFocusableInTouchMode(!readOnly);
+        btnSubmitOrderFeedback.setVisibility(readOnly ? View.GONE : View.VISIBLE);
+    }
+
+    private void submitFeedback() {
+        if (currentOrderId == null || currentOrderId.trim().isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy đơn hàng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String token = PrefsManager.getInstance(this).getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Vui lòng đăng nhập lại", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int rating = Math.round(ratingOrderFeedback.getRating());
+        String title = safeText(etOrderFeedbackTitle.getText() == null
+                ? ""
+                : etOrderFeedbackTitle.getText().toString());
+        String content = safeText(etOrderFeedbackContent.getText() == null
+                ? ""
+                : etOrderFeedbackContent.getText().toString());
+
+        if (rating <= 0) {
+            Toast.makeText(this, "Vui lòng chọn số sao đánh giá", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (title.isEmpty()) {
+            Toast.makeText(this, "Vui lòng nhập tiêu đề đánh giá", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (content.isEmpty()) {
+            Toast.makeText(this, "Vui lòng nhập nội dung đánh giá", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnSubmitOrderFeedback.setEnabled(false);
+        setFeedbackLoading(true);
+        ApiClient.getInstance()
+                .getApiService()
+                .submitOrderFeedback(
+                        "Bearer " + token,
+                        currentOrderId,
+                        new CreateOrderFeedbackRequest(rating, title, content))
+                .enqueue(new Callback<BaseResponse<OrderFeedbackResponse>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<BaseResponse<OrderFeedbackResponse>> call,
+                                           @NonNull Response<BaseResponse<OrderFeedbackResponse>> response) {
+                        btnSubmitOrderFeedback.setEnabled(true);
+                        setFeedbackLoading(false);
+
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            Toast.makeText(OrderDetailActivity.this, "Đã gửi đánh giá", Toast.LENGTH_SHORT).show();
+                            bindFeedbackData(response.body().getData(), true);
+                            return;
+                        }
+                        String msg = "Gửi đánh giá thất bại";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            msg = response.body().getMessage();
+                        }
+                        Toast.makeText(OrderDetailActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<BaseResponse<OrderFeedbackResponse>> call,
+                                          @NonNull Throwable t) {
+                        btnSubmitOrderFeedback.setEnabled(true);
+                        setFeedbackLoading(false);
+                        Toast.makeText(OrderDetailActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void setFeedbackLoading(boolean loading) {
+        if (progressFeedback != null) {
+            progressFeedback.setVisibility(loading ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void scrollToFeedbackSectionIfNeeded() {
+        if (!shouldOpenFeedbackSection || cardOrderFeedback == null || cardOrderFeedback.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        shouldOpenFeedbackSection = false;
+        cardOrderFeedback.post(() -> {
+            cardOrderFeedback.requestFocus();
+            cardOrderFeedback.setPressed(true);
+            cardOrderFeedback.postDelayed(() -> cardOrderFeedback.setPressed(false), 220);
+        });
     }
 
     private boolean canCancelOrder(String status) {

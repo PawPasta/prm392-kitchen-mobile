@@ -79,6 +79,7 @@ public class OrdersFragment extends Fragment {
         recyclerOrders.setAdapter(adapter);
         adapter.setOnItemClickListener(this::openOrderDetail);
         adapter.setOnCancelClickListener(this::showCancelReasonDialog);
+        adapter.setOnFeedbackClickListener(this::openOrderDetailForFeedback);
 
         // Setup listeners
         setupChipFilters();
@@ -264,6 +265,15 @@ public class OrdersFragment extends Fragment {
         Intent intent = new Intent(requireActivity(), OrderDetailActivity.class);
         intent.putExtra(OrderDetailActivity.EXTRA_ORDER_ID, item.getOrderId());
         intent.putExtra(OrderDetailActivity.EXTRA_ORDER_JSON, json);
+        startActivity(intent);
+    }
+
+    private void openOrderDetailForFeedback(OrderHistoryResponse.OrderItem item) {
+        String json = new Gson().toJson(item);
+        Intent intent = new Intent(requireActivity(), OrderDetailActivity.class);
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_ID, item.getOrderId());
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_JSON, json);
+        intent.putExtra(OrderDetailActivity.EXTRA_SCROLL_TO_FEEDBACK, true);
         startActivity(intent);
     }
 

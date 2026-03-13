@@ -79,6 +79,7 @@ public class OrderHistoryActivity extends AppCompatActivity {
         recyclerOrders.setAdapter(adapter);
         adapter.setOnItemClickListener(this::openOrderDetail);
         adapter.setOnCancelClickListener(this::showCancelReasonDialog);
+        adapter.setOnFeedbackClickListener(this::openOrderDetailForFeedback);
 
         setupChips();
         setupRefresh();
@@ -259,6 +260,15 @@ public class OrderHistoryActivity extends AppCompatActivity {
         android.content.Intent intent = new android.content.Intent(this, OrderDetailActivity.class);
         intent.putExtra(OrderDetailActivity.EXTRA_ORDER_ID, item.getOrderId());
         intent.putExtra(OrderDetailActivity.EXTRA_ORDER_JSON, json);
+        startActivity(intent);
+    }
+
+    private void openOrderDetailForFeedback(OrderHistoryResponse.OrderItem item) {
+        String json = new Gson().toJson(item);
+        android.content.Intent intent = new android.content.Intent(this, OrderDetailActivity.class);
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_ID, item.getOrderId());
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_JSON, json);
+        intent.putExtra(OrderDetailActivity.EXTRA_SCROLL_TO_FEEDBACK, true);
         startActivity(intent);
     }
 

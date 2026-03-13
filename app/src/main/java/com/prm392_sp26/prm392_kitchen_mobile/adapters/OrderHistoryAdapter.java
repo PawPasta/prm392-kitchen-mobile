@@ -31,6 +31,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
     private final Set<String> selectedOrderIds = new HashSet<>();
     private OnItemClickListener onItemClickListener;
     private OnCancelClickListener onCancelClickListener;
+    private OnFeedbackClickListener onFeedbackClickListener;
     private OnSelectionChangeListener onSelectionChangeListener;
     private boolean selectionMode;
     private boolean cancelEnabled = true;
@@ -62,6 +63,10 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
 
     public void setOnCancelClickListener(OnCancelClickListener listener) {
         this.onCancelClickListener = listener;
+    }
+
+    public void setOnFeedbackClickListener(OnFeedbackClickListener listener) {
+        this.onFeedbackClickListener = listener;
     }
 
     public void setOnSelectionChangeListener(OnSelectionChangeListener listener) {
@@ -161,9 +166,15 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 && cancelEnabled
                 && onCancelClickListener != null
                 && shouldShowCancel(item.getStatus());
-        holder.layoutOrderActions.setVisibility(showCancel ? View.VISIBLE : View.GONE);
+        boolean showFeedback = !selectionMode
+                && onFeedbackClickListener != null
+                && shouldShowFeedback(item.getStatus());
+
+        holder.layoutOrderActions.setVisibility(showCancel || showFeedback ? View.VISIBLE : View.GONE);
         holder.btnCancelOrder.setVisibility(showCancel ? View.VISIBLE : View.GONE);
         holder.btnCancelOrder.setOnClickListener(showCancel ? v -> onCancelClickListener.onCancelClick(item) : null);
+        holder.btnFeedbackOrder.setVisibility(showFeedback ? View.VISIBLE : View.GONE);
+        holder.btnFeedbackOrder.setOnClickListener(showFeedback ? v -> onFeedbackClickListener.onFeedbackClick(item) : null);
 
         String normalizedOrderId = item.getOrderId() == null ? "" : item.getOrderId().trim();
         holder.cbSelectOrder.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
@@ -290,12 +301,20 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 && !"CANCELLED".equalsIgnoreCase(normalized);
     }
 
+    private boolean shouldShowFeedback(String status) {
+        return "COMPLETED".equalsIgnoreCase(status == null ? "" : status.trim());
+    }
+
     public interface OnItemClickListener {
         void onItemClick(OrderHistoryResponse.OrderItem item);
     }
 
     public interface OnCancelClickListener {
         void onCancelClick(OrderHistoryResponse.OrderItem item);
+    }
+
+    public interface OnFeedbackClickListener {
+        void onFeedbackClick(OrderHistoryResponse.OrderItem item);
     }
 
     public interface OnSelectionChangeListener {
@@ -310,6 +329,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         private final TextView tvItemsCount;
         private final TextView tvTotal;
         private final Button btnCancelOrder;
+        private final Button btnFeedbackOrder;
         private final CheckBox cbSelectOrder;
         private final View viewStatusAccent;
         private final View layoutOrderActions;
@@ -323,6 +343,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
             tvItemsCount = itemView.findViewById(R.id.tvItemsCount);
             tvTotal = itemView.findViewById(R.id.tvTotal);
             btnCancelOrder = itemView.findViewById(R.id.btnCancelOrder);
+            btnFeedbackOrder = itemView.findViewById(R.id.btnFeedbackOrder);
             cbSelectOrder = itemView.findViewById(R.id.cbSelectOrder);
             viewStatusAccent = itemView.findViewById(R.id.viewStatusAccent);
             layoutOrderActions = itemView.findViewById(R.id.layoutOrderActions);
