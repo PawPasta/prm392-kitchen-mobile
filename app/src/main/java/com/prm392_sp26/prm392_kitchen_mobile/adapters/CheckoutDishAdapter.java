@@ -70,8 +70,8 @@ public class CheckoutDishAdapter extends RecyclerView.Adapter<CheckoutDishAdapte
                 .centerCrop()
                 .into(holder.ivDishImage);
 
-        boolean isCustomDish = isCustomDish(dish);
-        if (isCustomDish) {
+        boolean hasExpandableItems = hasExpandableItems(dish);
+        if (hasExpandableItems) {
             holder.tvExpandToggle.setVisibility(View.VISIBLE);
             boolean expanded = expandedDishKeys.contains(dishKey);
             holder.tvExpandToggle.setText(expanded ? "Ẩn thành phần ▲" : "Xem thành phần ▼");
@@ -126,11 +126,8 @@ public class CheckoutDishAdapter extends RecyclerView.Adapter<CheckoutDishAdapte
         return String.format(Locale.getDefault(), "%.1f", value);
     }
 
-    private boolean isCustomDish(OrderResponse.OrderDishDetail dish) {
-        if (dish == null || dish.getDishStatus() == null) {
-            return false;
-        }
-        return "CUSTOM".equalsIgnoreCase(dish.getDishStatus().trim());
+    private boolean hasExpandableItems(OrderResponse.OrderDishDetail dish) {
+        return dish != null && dish.getCustomItems() != null && !dish.getCustomItems().isEmpty();
     }
 
     private int getDishKey(OrderResponse.OrderDishDetail dish, int position) {
