@@ -146,7 +146,7 @@
             android:insetBottom="0dp"
             android:paddingStart="5dp"
             android:paddingEnd="5dp"
-            android:text="Tạo món ăn mới"
+            android:text="Thanh toán"
             android:textColor="@color/colorOnPrimary"
             android:textSize="15sp"
             android:textStyle="bold"

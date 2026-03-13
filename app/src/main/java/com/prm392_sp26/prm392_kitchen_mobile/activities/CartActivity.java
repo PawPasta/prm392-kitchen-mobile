@@ -1,5 +1,6 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CheckBox;
@@ -108,9 +109,11 @@ public class CartActivity extends AppCompatActivity {
 
         if (btnCreateCustomOrder != null) {
             btnCreateCustomOrder.setOnClickListener(v -> {
-                android.content.Intent intent = new android.content.Intent(
-                        CartActivity.this,
-                        com.prm392_sp26.prm392_kitchen_mobile.activities.CreateCustomOrderActivity.class);
+                if (currentDishes.isEmpty()) {
+                    Toast.makeText(CartActivity.this, "Giỏ hàng đang trống", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(CartActivity.this, CheckoutActivity.class);
                 startActivity(intent);
             });
         }

@@ -77,6 +77,11 @@
             android:name=".activities.CartActivity"
             android:exported="false" />
 
+        <!-- CheckoutActivity - Checkout screen -->
+        <activity
+            android:name=".activities.CheckoutActivity"
+            android:exported="false" />
+
         <!-- StepItemsActivity - Items by step category -->
         <activity
             android:name=".activities.StepItemsActivity"
