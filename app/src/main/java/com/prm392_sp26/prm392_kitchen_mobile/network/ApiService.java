@@ -15,7 +15,11 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.PaymentMethodResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.PromotionResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.SearchResponse;
+
+import java.util.List;
 
 
 import retrofit2.Call;
@@ -231,6 +235,18 @@ public interface ApiService {
             @Header("Authorization") String authHeader,
             @Query("keyword") String keyword,
             @Query("limit") int limit
+    );
+
+    @GET("api/promotions")
+    Call<BaseResponse<PageResponse<PromotionResponse>>> getPromotions(
+            @Header("Authorization") String authHeader,
+            @Query("page") int page,
+            @Query("size") int size
+    );
+
+    @GET("api/payment-methods")
+    Call<BaseResponse<List<PaymentMethodResponse>>> getPaymentMethods(
+            @Header("Authorization") String authHeader
     );
 
     // ==================== ORDER MANAGEMENT APIs ====================
