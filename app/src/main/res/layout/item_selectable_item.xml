@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardSelectableItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="3dp"
-    app:cardBackgroundColor="@color/colorSurface">
+    app:cardBackgroundColor="@color/colorSurface"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/cardStroke">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -36,7 +39,7 @@
                     android:layout_height="72dp"
                     android:contentDescription="@string/app_name"
                     android:scaleType="centerCrop"
-                    android:background="@drawable/bg_item_image_rounded"
+                    android:background="@drawable/bg_item_image_circle"
                     android:clipToOutline="true"
                     android:visibility="gone" />
 
@@ -66,7 +69,8 @@
                         <com.google.android.material.checkbox.MaterialCheckBox
                             android:id="@+id/cbSelectItem"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:visibility="gone" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -146,30 +150,24 @@
             android:id="@+id/layoutItemOptions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:layout_marginStart="12dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
             android:visibility="gone">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:id="@+id/layoutItemQuantityGroup"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="SL:"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="13sp" />
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnItemQuantityMinus"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:text="-"
                     android:textSize="14sp"
                     android:textColor="@color/colorOnPrimary"
@@ -178,23 +176,24 @@
                     android:insetLeft="0dp"
                     android:insetRight="0dp"
                     app:backgroundTint="@color/colorPrimary"
+                    app:cornerRadius="8dp"
                     style="@style/Widget.MaterialComponents.Button" />
 
                 <TextView
                     android:id="@+id/tvItemQuantity"
-                    android:layout_width="56dp"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="8dp"
+                    android:layout_width="48dp"
+                    android:layout_height="28dp"
+                    android:layout_marginHorizontal="6dp"
                     android:gravity="center"
                     android:text="0"
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="13sp"
-                    android:background="@color/colorSurfaceVariant" />
+                    android:background="@drawable/bg_edittext" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnItemQuantityPlus"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:text="+"
                     android:textSize="14sp"
                     android:textColor="@color/colorOnPrimary"
@@ -203,40 +202,28 @@
                     android:insetLeft="0dp"
                     android:insetRight="0dp"
                     app:backgroundTint="@color/colorPrimary"
+                    app:cornerRadius="8dp"
                     style="@style/Widget.MaterialComponents.Button" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp"
-                android:gravity="top">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ghi:"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="13sp" />
-
-                <EditText
-                    android:id="@+id/etItemNote"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:padding="8dp"
-                    android:inputType="text"
-                    android:textSize="13sp"
-                    android:background="@color/colorSurfaceVariant"
-                    android:textColor="@color/colorTextPrimary"
-                    android:hint="Ghi chú"
-                    android:textColorHint="@color/colorTextHint" />
-            </LinearLayout>
+            <EditText
+                android:id="@+id/etItemNote"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:gravity="center_vertical"
+                android:inputType="text"
+                android:textSize="13sp"
+                android:background="@drawable/bg_edittext"
+                android:textColor="@color/colorTextPrimary"
+                android:hint="Ghi chú"
+                android:textColorHint="@color/colorTextHint" />
         </LinearLayout>
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
 

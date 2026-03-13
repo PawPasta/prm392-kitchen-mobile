@@ -49,6 +49,7 @@ public class OrdersFragment extends Fragment {
     private LinearLayout layoutEmpty;
     private SwipeRefreshLayout swipeRefresh;
     private ChipGroup chipGroupStatus;
+    private NestedScrollView ordersScroll;
     private OrderHistoryAdapter adapter;
     private PrefsManager prefsManager;
 
@@ -72,6 +73,7 @@ public class OrdersFragment extends Fragment {
         layoutEmpty = view.findViewById(R.id.layoutEmpty);
         swipeRefresh = view.findViewById(R.id.swipeRefresh);
         chipGroupStatus = view.findViewById(R.id.chipGroupStatus);
+        ordersScroll = view.findViewById(R.id.ordersScroll);
 
         // Setup RecyclerView
         adapter = new OrderHistoryAdapter();
@@ -131,6 +133,23 @@ public class OrdersFragment extends Fragment {
     }
 
     private void setupPagination() {
+        if (ordersScroll != null) {
+            ordersScroll.setOnScrollChangeListener((NestedScrollView v, int scrollX, int scrollY,
+                                                    int oldScrollX, int oldScrollY) -> {
+                if (scrollY <= oldScrollY) {
+                    return;
+                }
+                View content = v.getChildAt(0);
+                if (content == null) {
+                    return;
+                }
+                int distanceToBottom = content.getMeasuredHeight() - v.getMeasuredHeight() - scrollY;
+                if (!isLoading && !isLastPage && distanceToBottom <= dpToPx(120)) {
+                    loadOrders(currentPage + 1, pageSize, selectedStatus, true);
+                }
+            });
+            return;
+        }
         if (recyclerOrders == null) return;
 
         recyclerOrders.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -155,6 +174,10 @@ public class OrdersFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private int dpToPx(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density);
     }
 
     private void loadOrders(int page, int size, String status, boolean isLoadMore) {
