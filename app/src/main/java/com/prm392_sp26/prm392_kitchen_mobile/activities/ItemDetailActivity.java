@@ -49,8 +49,6 @@ public class ItemDetailActivity extends AppCompatActivity {
     private TextView tvQuantity;
     private TextView tvCalories;
     private TextView tvNote;
-    private TextView tvCreated;
-    private TextView tvUpdated;
     private TextView tvNutrientsEmpty;
     private MaterialButton btnCreateCustom;
     private ItemNutrientAdapter nutrientAdapter;
@@ -94,8 +92,6 @@ public class ItemDetailActivity extends AppCompatActivity {
         tvQuantity = findViewById(R.id.tvItemDetailQuantity);
         tvCalories = findViewById(R.id.tvItemDetailCalories);
         tvNote = findViewById(R.id.tvItemDetailNote);
-        tvCreated = findViewById(R.id.tvItemDetailCreated);
-        tvUpdated = findViewById(R.id.tvItemDetailUpdated);
         tvNutrientsEmpty = findViewById(R.id.tvItemNutrientsEmpty);
         btnCreateCustom = findViewById(R.id.btnCreateCustomFromItem);
 
@@ -161,9 +157,14 @@ public class ItemDetailActivity extends AppCompatActivity {
         tvQuantity.setText("Base quantity: " + formatNumber(item.getBaseQuantity()) + " " + nonEmpty(item.getUnit(), ""));
         tvCalories.setText("Calories: " + formatNumber(item.getCalories()) + " kcal • "
                 + formatNumber(item.getCaloriesPerUnit()) + " / unit");
-        tvNote.setText("Note: " + nonEmpty(item.getNote(), "--"));
-        tvCreated.setText("Created: " + nonEmpty(item.getCreatedAt(), "--"));
-        tvUpdated.setText("Updated: " + nonEmpty(item.getUpdatedAt(), "--"));
+
+        String note = nonEmpty(item.getNote(), "");
+        if (note.isEmpty()) {
+            tvNote.setVisibility(View.GONE);
+        } else {
+            tvNote.setVisibility(View.VISIBLE);
+            tvNote.setText("Note: " + note);
+        }
 
         String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(
                 item.getImageUrl(),
