@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.CheckoutDishAdapter;
+import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
@@ -55,6 +57,8 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private TextView tvOrderId;
     private TextView tvStatus;
+    private TextView tvUserName;
+    private TextView tvUserEmail;
     private TextView tvUserId;
     private TextView tvCreatedAt;
     private TextView tvPickupAt;
@@ -71,6 +75,8 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private CheckoutDishAdapter dishAdapter;
     private String currentOrderId;
+    private String currentOrderUserId = "";
+    private UserProfile currentUserProfile;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -103,6 +109,8 @@ public class OrderDetailActivity extends AppCompatActivity {
     private void bindViews() {
         tvOrderId = findViewById(R.id.tvOrderDetailId);
         tvStatus = findViewById(R.id.tvOrderDetailStatus);
+        tvUserName = findViewById(R.id.tvOrderDetailUserName);
+        tvUserEmail = findViewById(R.id.tvOrderDetailUserEmail);
         tvUserId = findViewById(R.id.tvOrderDetailUserId);
         tvCreatedAt = findViewById(R.id.tvOrderDetailCreatedAt);
         tvPickupAt = findViewById(R.id.tvOrderDetailPickupAt);
@@ -149,6 +157,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         }
 
         setOrderLoading(true);
+        loadCurrentUserProfile(token);
         ApiClient.getInstance()
                 .getApiService()
                 .getOrderById("Bearer " + token, orderId)
@@ -184,6 +193,31 @@ public class OrderDetailActivity extends AppCompatActivity {
                 });
     }
 
+    private void loadCurrentUserProfile(String token) {
+        ApiClient.getInstance()
+                .getApiService()
+                .getCurrentUserProfile("Bearer " + token)
+                .enqueue(new Callback<BaseResponse<UserProfile>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<BaseResponse<UserProfile>> call,
+                                           @NonNull Response<BaseResponse<UserProfile>> response) {
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            currentUserProfile = response.body().getData();
+                            bindUserInfo(currentUserProfile, currentOrderUserId);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<BaseResponse<UserProfile>> call,
+                                          @NonNull Throwable t) {
+                        // Keep fallback user info from order detail if profile request fails.
+                    }
+                });
+    }
+
     private void bindOrder(OrderResponse order) {
         if (order == null) {
             return;
@@ -197,7 +231,8 @@ public class OrderDetailActivity extends AppCompatActivity {
         int statusColor = ContextCompat.getColor(this, StatusColorUtil.getStatusColorRes(status));
         tvStatus.setTextColor(statusColor);
 
-        tvUserId.setText("User ID: " + fallback(order.getUserId(), "--"));
+        currentOrderUserId = safeText(order.getUserId());
+        bindUserInfo(currentUserProfile, currentOrderUserId);
         tvCreatedAt.setText("Ngày tạo: " + formatDateTime(order.getCreatedAt()));
 
         String pickup = safeText(order.getPickupAt());
@@ -221,6 +256,28 @@ public class OrderDetailActivity extends AppCompatActivity {
         btnCancelOrder.setVisibility(canCancelOrder(status) ? View.VISIBLE : View.GONE);
     }
 
+    private void bindUserInfo(@Nullable UserProfile profile, String fallbackUserId) {
+        String fallbackId = fallback(fallbackUserId, "--");
+        if (profile == null) {
+            tvUserName.setText("Tên: Khách hàng");
+            tvUserEmail.setText("Email: --");
+            tvUserId.setText("User ID: " + fallbackId);
+            return;
+        }
+
+        String name = safeText(profile.getDisplayName());
+        if (name.isEmpty()) {
+            name = "Khách hàng";
+        }
+        tvUserName.setText("Tên: " + name);
+
+        String email = safeText(profile.getEmail());
+        tvUserEmail.setText("Email: " + (email.isEmpty() ? "--" : email));
+
+        String userId = safeText(profile.getUserId());
+        tvUserId.setText("User ID: " + (userId.isEmpty() ? fallbackId : userId));
+    }
+
     private void renderTimeline(String currentStatus) {
         timelineContainer.removeAllViews();
         String[] stepStatuses = new String[] { "CONFIRMED", "PROCESSING", "READY", "COMPLETED" };
@@ -234,12 +291,45 @@ public class OrderDetailActivity extends AppCompatActivity {
             LinearLayout stepContainer = new LinearLayout(this);
             stepContainer.setOrientation(LinearLayout.VERTICAL);
             stepContainer.setGravity(Gravity.CENTER_HORIZONTAL);
-            LinearLayout.LayoutParams stepParams = new LinearLayout.LayoutParams(dp(72),
+            LinearLayout.LayoutParams stepParams = new LinearLayout.LayoutParams(0,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
+            stepParams.weight = 1f;
             stepContainer.setLayoutParams(stepParams);
 
+            FrameLayout indicatorRow = new FrameLayout(this);
+            LinearLayout.LayoutParams indicatorRowParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(24));
+            indicatorRow.setLayoutParams(indicatorRowParams);
+
+            if (i > 0) {
+                View leftConnector = new View(this);
+                FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        dp(3),
+                        Gravity.CENTER_VERTICAL);
+                leftParams.setMarginEnd(dp(12));
+                leftConnector.setLayoutParams(leftParams);
+                leftConnector.setBackgroundColor(ContextCompat.getColor(this,
+                        currentIndex >= i ? R.color.colorSuccess : R.color.cardStroke));
+                indicatorRow.addView(leftConnector);
+            }
+
+            if (i < stepStatuses.length - 1) {
+                View rightConnector = new View(this);
+                FrameLayout.LayoutParams rightParams = new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        dp(3),
+                        Gravity.CENTER_VERTICAL);
+                rightParams.setMarginStart(dp(12));
+                rightConnector.setLayoutParams(rightParams);
+                rightConnector.setBackgroundColor(ContextCompat.getColor(this,
+                        currentIndex > i ? R.color.colorSuccess : R.color.cardStroke));
+                indicatorRow.addView(rightConnector);
+            }
+
             TextView circle = new TextView(this);
-            LinearLayout.LayoutParams circleParams = new LinearLayout.LayoutParams(dp(24), dp(24));
+            FrameLayout.LayoutParams circleParams = new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER);
             circle.setLayoutParams(circleParams);
             circle.setGravity(Gravity.CENTER);
             circle.setTypeface(Typeface.DEFAULT_BOLD);
@@ -253,15 +343,16 @@ public class OrderDetailActivity extends AppCompatActivity {
 
             GradientDrawable circleBg = new GradientDrawable();
             circleBg.setShape(GradientDrawable.OVAL);
-            circleBg.setColor(ContextCompat.getColor(this, reached ? R.color.colorPrimary : R.color.colorSurfaceVariant));
+            circleBg.setColor(ContextCompat.getColor(this, reached ? R.color.colorSuccess : R.color.colorSurfaceVariant));
             circle.setBackground(circleBg);
-            stepContainer.addView(circle);
+            indicatorRow.addView(circle);
+            stepContainer.addView(indicatorRow);
 
             TextView label = new TextView(this);
             LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            labelParams.topMargin = dp(6);
+            labelParams.topMargin = dp(8);
             label.setLayoutParams(labelParams);
             label.setText(stepLabels[i]);
             label.setTextSize(11f);
@@ -270,16 +361,6 @@ public class OrderDetailActivity extends AppCompatActivity {
             stepContainer.addView(label);
 
             timelineContainer.addView(stepContainer);
-
-            if (i < stepStatuses.length - 1) {
-                View connector = new View(this);
-                LinearLayout.LayoutParams connectorParams = new LinearLayout.LayoutParams(dp(18), dp(2));
-                connectorParams.topMargin = dp(11);
-                connector.setLayoutParams(connectorParams);
-                connector.setBackgroundColor(ContextCompat.getColor(this,
-                        currentIndex > i ? R.color.colorPrimary : R.color.cardStroke));
-                timelineContainer.addView(connector);
-            }
         }
     }
 
