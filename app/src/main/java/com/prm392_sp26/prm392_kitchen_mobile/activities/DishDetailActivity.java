@@ -2,11 +2,13 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,6 +58,8 @@ public class DishDetailActivity extends AppCompatActivity {
     private MaterialButton btnQuantityMinus;
     private MaterialButton btnQuantityPlus;
     private RecyclerView rvSteps;
+    private LinearLayout layoutNutrientsContainer;
+    private TextView tvNutrientsEmpty;
     private StepAdapter stepAdapter;
     private PrefsManager prefsManager;
     private DishDetailResponse currentDish;
@@ -86,6 +90,8 @@ public class DishDetailActivity extends AppCompatActivity {
         btnQuantityMinus = findViewById(R.id.btnQuantityMinus);
         btnQuantityPlus = findViewById(R.id.btnQuantityPlus);
         rvSteps = findViewById(R.id.rvSteps);
+        layoutNutrientsContainer = findViewById(R.id.layoutDishNutrientsContainer);
+        tvNutrientsEmpty = findViewById(R.id.tvDishNutrientsEmpty);
 
         rvSteps.setLayoutManager(new LinearLayoutManager(this));
         adjustHeroImageRatio();
@@ -179,7 +185,11 @@ public class DishDetailActivity extends AppCompatActivity {
             for (DishStepResponse step : steps) {
                 loadStepItems(dish.getDishId(), step.getStepId());
             }
+        } else {
+            rvSteps.setAdapter(null);
         }
+
+        renderNutrients(dish.getTotalNutrients());
     }
 
     private void adjustHeroImageRatio() {
@@ -333,6 +343,55 @@ public class DishDetailActivity extends AppCompatActivity {
                     Log.e(TAG, "Load items for step " + stepId + " failed", t);
                 }
             });
+    }
+
+    private void renderNutrients(List<DishDetailResponse.DishNutrient> nutrients) {
+        if (layoutNutrientsContainer == null || tvNutrientsEmpty == null) {
+            return;
+        }
+        layoutNutrientsContainer.removeAllViews();
+
+        if (nutrients == null || nutrients.isEmpty()) {
+            tvNutrientsEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (DishDetailResponse.DishNutrient nutrient : nutrients) {
+            if (nutrient == null) {
+                continue;
+            }
+            View rowView = inflater.inflate(R.layout.item_nutrient, layoutNutrientsContainer, false);
+            TextView tvNutrientName = rowView.findViewById(R.id.tvNutrientName);
+            TextView tvNutrientDescription = rowView.findViewById(R.id.tvNutrientDescription);
+            TextView tvNutrientAmount = rowView.findViewById(R.id.tvNutrientAmount);
+            TextView tvNutrientBase = rowView.findViewById(R.id.tvNutrientBase);
+
+            tvNutrientName.setText(nonEmpty(nutrient.getNutrientName(), "Nutrient"));
+            tvNutrientDescription.setText(nonEmpty(nutrient.getNutrientDescription(), "--"));
+            tvNutrientAmount.setText(formatNumber(nutrient.getTotalAmount()) + " "
+                    + nonEmpty(nutrient.getNutrientUnit(), ""));
+            tvNutrientBase.setText("Tổng trong 1 phần");
+
+            layoutNutrientsContainer.addView(rowView);
+        }
+
+        tvNutrientsEmpty.setVisibility(
+                layoutNutrientsContainer.getChildCount() == 0 ? View.VISIBLE : View.GONE);
+    }
+
+    private String nonEmpty(String value, String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
+    }
+
+    private String formatNumber(double value) {
+        if (Math.abs(value - Math.rint(value)) < 0.0001d) {
+            return String.valueOf((long) Math.rint(value));
+        }
+        return String.format(Locale.getDefault(), "%.2f", value);
     }
 
     private String getDishEmoji(String name) {

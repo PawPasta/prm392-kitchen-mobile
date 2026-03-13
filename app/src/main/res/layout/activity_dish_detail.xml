@@ -156,6 +156,37 @@
             android:layout_marginHorizontal="20dp"
             android:nestedScrollingEnabled="false" />
 
+        <!-- TIÊU ĐỀ NUTRIENTS -->
+        <TextView
+            android:id="@+id/tvDishNutrientsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="16dp"
+            android:text="Nutrients"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/layoutDishNutrientsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginHorizontal="20dp"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/tvDishNutrientsEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="20dp"
+            android:gravity="center"
+            android:text="Không có thông tin dinh dưỡng"
+            android:textColor="@color/colorTextSecondary"
+            android:visibility="gone" />
+
         <!-- QUICK CONTROLS -->
         <LinearLayout
             android:layout_width="match_parent"
