@@ -246,6 +246,10 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void openPaymentBill(String message, OrderCheckoutResponse data) {
+        if (shouldOpenSuccessDirectly(data)) {
+            openPaymentSuccess(message, data);
+            return;
+        }
         Intent intent = new Intent(this, PaymentBillActivity.class);
         intent.putExtra(PaymentBillActivity.EXTRA_API_MESSAGE, safeText(message));
         intent.putExtra(PaymentBillActivity.EXTRA_ORDER_ID, safeText(data.getOrderId()));
@@ -257,6 +261,31 @@ public class CheckoutActivity extends AppCompatActivity {
         intent.putExtra(PaymentBillActivity.EXTRA_FINAL_AMOUNT, data.getFinalAmount());
         intent.putExtra(PaymentBillActivity.EXTRA_PAYMENT_URL, safeText(data.getPaymentUrl()));
         startActivity(intent);
+    }
+
+    private boolean shouldOpenSuccessDirectly(OrderCheckoutResponse data) {
+        if (data == null) {
+            return false;
+        }
+        String paymentMethod = safeText(data.getPaymentMethodName());
+        if (!"WALLET".equalsIgnoreCase(paymentMethod)) {
+            return false;
+        }
+        String paymentStatus = safeText(data.getPaymentStatus());
+        return "SUCCESS".equalsIgnoreCase(paymentStatus);
+    }
+
+    private void openPaymentSuccess(String message, OrderCheckoutResponse data) {
+        Intent intent = new Intent(this, PaymentSuccessActivity.class);
+        intent.putExtra(PaymentSuccessActivity.EXTRA_MESSAGE, safeText(message));
+        intent.putExtra(PaymentSuccessActivity.EXTRA_ORDER_ID, safeText(data.getOrderId()));
+        intent.putExtra(PaymentSuccessActivity.EXTRA_PAYMENT_ID, safeText(data.getPaymentId()));
+        intent.putExtra(PaymentSuccessActivity.EXTRA_PAYMENT_STATUS, safeText(data.getPaymentStatus()));
+        intent.putExtra(PaymentSuccessActivity.EXTRA_MOMO_TRANS_ID, "");
+        intent.putExtra(PaymentSuccessActivity.EXTRA_RESULT_CODE, 0);
+        intent.putExtra(PaymentSuccessActivity.EXTRA_RESULT_MESSAGE, "");
+        startActivity(intent);
+        finish();
     }
 
     private void loadCheckoutData() {
