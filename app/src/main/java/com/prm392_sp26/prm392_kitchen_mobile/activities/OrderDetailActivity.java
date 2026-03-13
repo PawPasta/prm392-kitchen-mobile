@@ -1,7 +1,10 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.app.AlertDialog;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -220,31 +223,79 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private void renderTimeline(String currentStatus) {
         timelineContainer.removeAllViews();
-        String[] statuses = new String[] { "CREATED", "CONFIRMED", "PROCESSING", "READY", "COMPLETED", "CANCELLED" };
-        for (String status : statuses) {
-            TextView chip = new TextView(this);
-            chip.setText(status);
-            chip.setTextSize(11f);
-            chip.setPadding(dp(10), dp(6), dp(10), dp(6));
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+        String[] stepStatuses = new String[] { "CONFIRMED", "PROCESSING", "READY", "COMPLETED" };
+        String[] stepLabels = new String[] { "Xác nhận", "Đang làm", "Sẵn sàng", "Hoàn tất" };
+        int currentIndex = getProgressStepIndex(currentStatus);
+
+        for (int i = 0; i < stepStatuses.length; i++) {
+            boolean reached = currentIndex >= i;
+            boolean isCurrent = currentIndex == i;
+
+            LinearLayout stepContainer = new LinearLayout(this);
+            stepContainer.setOrientation(LinearLayout.VERTICAL);
+            stepContainer.setGravity(Gravity.CENTER_HORIZONTAL);
+            LinearLayout.LayoutParams stepParams = new LinearLayout.LayoutParams(dp(72),
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            stepContainer.setLayoutParams(stepParams);
+
+            TextView circle = new TextView(this);
+            LinearLayout.LayoutParams circleParams = new LinearLayout.LayoutParams(dp(24), dp(24));
+            circle.setLayoutParams(circleParams);
+            circle.setGravity(Gravity.CENTER);
+            circle.setTypeface(Typeface.DEFAULT_BOLD);
+            circle.setTextSize(11f);
+            circle.setTextColor(ContextCompat.getColor(this, reached ? R.color.white : R.color.colorTextSecondary));
+            if (reached && !isCurrent) {
+                circle.setText("✓");
+            } else {
+                circle.setText(String.valueOf(i + 1));
+            }
+
+            GradientDrawable circleBg = new GradientDrawable();
+            circleBg.setShape(GradientDrawable.OVAL);
+            circleBg.setColor(ContextCompat.getColor(this, reached ? R.color.colorPrimary : R.color.colorSurfaceVariant));
+            circle.setBackground(circleBg);
+            stepContainer.addView(circle);
+
+            TextView label = new TextView(this);
+            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            params.setMarginEnd(dp(6));
-            chip.setLayoutParams(params);
+            labelParams.topMargin = dp(6);
+            label.setLayoutParams(labelParams);
+            label.setText(stepLabels[i]);
+            label.setTextSize(11f);
+            label.setTypeface(isCurrent ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+            label.setTextColor(ContextCompat.getColor(this, reached ? R.color.colorTextPrimary : R.color.colorTextSecondary));
+            stepContainer.addView(label);
 
-            boolean isActive = status.equalsIgnoreCase(currentStatus);
-            if (isActive) {
-                int chipColor = ContextCompat.getColor(this, StatusColorUtil.getStatusBackgroundColorRes(status));
-                chip.setBackgroundResource(R.drawable.bg_status_chip_active);
-                if (chip.getBackground() != null) {
-                    chip.getBackground().setTint(chipColor);
-                }
-                chip.setTextColor(ContextCompat.getColor(this, R.color.white));
-            } else {
-                chip.setBackgroundResource(R.drawable.bg_status_chip_inactive);
-                chip.setTextColor(ContextCompat.getColor(this, R.color.colorTextPrimary));
+            timelineContainer.addView(stepContainer);
+
+            if (i < stepStatuses.length - 1) {
+                View connector = new View(this);
+                LinearLayout.LayoutParams connectorParams = new LinearLayout.LayoutParams(dp(18), dp(2));
+                connectorParams.topMargin = dp(11);
+                connector.setLayoutParams(connectorParams);
+                connector.setBackgroundColor(ContextCompat.getColor(this,
+                        currentIndex > i ? R.color.colorPrimary : R.color.cardStroke));
+                timelineContainer.addView(connector);
             }
-            timelineContainer.addView(chip);
+        }
+    }
+
+    private int getProgressStepIndex(String status) {
+        String normalized = safeText(status).toUpperCase(Locale.US);
+        switch (normalized) {
+            case "CONFIRMED":
+                return 0;
+            case "PROCESSING":
+                return 1;
+            case "READY":
+                return 2;
+            case "COMPLETED":
+                return 3;
+            default:
+                return -1;
         }
     }
 
