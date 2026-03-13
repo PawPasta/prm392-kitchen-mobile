@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RatingBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -71,6 +72,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     private TextView tvFinalAmount;
     private TextView tvNote;
     private TextView tvDishesEmpty;
+    private ScrollView svOrderDetailContent;
     private LinearLayout timelineContainer;
     private RecyclerView rvDishes;
     private View cardOrderFeedback;
@@ -132,6 +134,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         tvFinalAmount = findViewById(R.id.tvOrderDetailFinalAmount);
         tvNote = findViewById(R.id.tvOrderDetailNote);
         tvDishesEmpty = findViewById(R.id.tvOrderDetailDishesEmpty);
+        svOrderDetailContent = findViewById(R.id.svOrderDetailContent);
         timelineContainer = findViewById(R.id.timelineContainer);
         rvDishes = findViewById(R.id.rvOrderDetailDishes);
         cardOrderFeedback = findViewById(R.id.cardOrderFeedback);
@@ -605,9 +608,9 @@ public class OrderDetailActivity extends AppCompatActivity {
         }
         shouldOpenFeedbackSection = false;
         cardOrderFeedback.post(() -> {
-            cardOrderFeedback.requestFocus();
-            cardOrderFeedback.setPressed(true);
-            cardOrderFeedback.postDelayed(() -> cardOrderFeedback.setPressed(false), 220);
+            if (svOrderDetailContent != null) {
+                svOrderDetailContent.smoothScrollTo(0, cardOrderFeedback.getTop());
+            }
         });
     }
 
