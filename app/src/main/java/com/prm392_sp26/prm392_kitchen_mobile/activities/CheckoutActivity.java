@@ -1,5 +1,6 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,6 +23,8 @@ import com.google.android.material.button.MaterialButton;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.CheckoutDishAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.OrderCheckoutRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderCheckoutResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.PaymentMethodResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.PromotionResponse;
@@ -66,6 +69,7 @@ public class CheckoutActivity extends AppCompatActivity {
     private PromotionResponse selectedPromotion;
     private PaymentMethodResponse selectedPaymentMethod;
     private int pendingCalls;
+    private boolean isSubmittingCheckout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +96,7 @@ public class CheckoutActivity extends AppCompatActivity {
         tvDiscount = findViewById(R.id.tvCheckoutDiscount);
         tvTotal = findViewById(R.id.tvCheckoutTotal);
         btnPlaceOrder = findViewById(R.id.btnPlaceOrder);
+        btnPlaceOrder.setEnabled(false);
         spPromotion = findViewById(R.id.spPromotion);
         spPaymentMethod = findViewById(R.id.spPaymentMethod);
         RecyclerView rvDishes = findViewById(R.id.rvCheckoutDishes);
@@ -137,18 +142,19 @@ public class CheckoutActivity extends AppCompatActivity {
 
     private void setupPaymentMethodSpinner() {
         paymentMethodLabels.clear();
-        paymentMethodLabels.add("Đang tải...");
+        paymentMethodLabels.add("Không chọn");
         paymentMethodAdapter = new ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, paymentMethodLabels);
         paymentMethodAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spPaymentMethod.setAdapter(paymentMethodAdapter);
+        spPaymentMethod.setSelection(0, false);
         spPaymentMethod.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position < 0 || position >= paymentMethods.size()) {
+                if (position <= 0 || position - 1 >= paymentMethods.size()) {
                     selectedPaymentMethod = null;
                 } else {
-                    selectedPaymentMethod = paymentMethods.get(position);
+                    selectedPaymentMethod = paymentMethods.get(position - 1);
                 }
             }
 
@@ -165,13 +171,92 @@ public class CheckoutActivity extends AppCompatActivity {
                 Toast.makeText(this, "Không có món để đặt", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (selectedPaymentMethod == null) {
-                Toast.makeText(this, "Vui lòng chọn phương thức thanh toán", Toast.LENGTH_SHORT).show();
+            if (isSubmittingCheckout) {
                 return;
             }
-            Toast.makeText(this, "Đặt hàng thành công", Toast.LENGTH_SHORT).show();
-            finish();
+            submitCheckout();
         });
+    }
+
+    private void submitCheckout() {
+        if (currentOrder == null || currentOrder.getOrderId() == null || currentOrder.getOrderId().trim().isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy đơn hàng hiện tại", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Integer paymentMethodId = selectedPaymentMethod != null
+                ? selectedPaymentMethod.getPaymentMethodId()
+                : null;
+        Integer promotionId = selectedPromotion != null
+                ? selectedPromotion.getPromotionId()
+                : null;
+        OrderCheckoutRequest request = new OrderCheckoutRequest(
+                currentOrder.getOrderId(),
+                paymentMethodId,
+                promotionId);
+
+        isSubmittingCheckout = true;
+        btnPlaceOrder.setEnabled(false);
+        setLoading(true);
+        ApiClient.getInstance()
+                .getApiService()
+                .checkoutOrder("Bearer " + token, request)
+                .enqueue(new Callback<BaseResponse<OrderCheckoutResponse>>() {
+                    @Override
+                    public void onResponse(
+                            @NonNull Call<BaseResponse<OrderCheckoutResponse>> call,
+                            @NonNull Response<BaseResponse<OrderCheckoutResponse>> response) {
+                        isSubmittingCheckout = false;
+                        setLoading(false);
+                        updatePlaceOrderButtonState();
+
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            openPaymentBill(response.body().getMessage(), response.body().getData());
+                            return;
+                        }
+
+                        String message = "Không thể tạo thanh toán";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            message = response.body().getMessage();
+                        }
+                        Toast.makeText(CheckoutActivity.this, message, Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onFailure(
+                            @NonNull Call<BaseResponse<OrderCheckoutResponse>> call,
+                            @NonNull Throwable t) {
+                        isSubmittingCheckout = false;
+                        setLoading(false);
+                        updatePlaceOrderButtonState();
+                        Toast.makeText(CheckoutActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void openPaymentBill(String message, OrderCheckoutResponse data) {
+        Intent intent = new Intent(this, PaymentBillActivity.class);
+        intent.putExtra(PaymentBillActivity.EXTRA_API_MESSAGE, safeText(message));
+        intent.putExtra(PaymentBillActivity.EXTRA_ORDER_ID, safeText(data.getOrderId()));
+        intent.putExtra(PaymentBillActivity.EXTRA_PAYMENT_METHOD_NAME, safeText(data.getPaymentMethodName()));
+        intent.putExtra(PaymentBillActivity.EXTRA_PAYMENT_ID, safeText(data.getPaymentId()));
+        intent.putExtra(PaymentBillActivity.EXTRA_PAYMENT_STATUS, safeText(data.getPaymentStatus()));
+        intent.putExtra(PaymentBillActivity.EXTRA_TOTAL_PRICE, data.getTotalPrice());
+        intent.putExtra(PaymentBillActivity.EXTRA_DISCOUNT_AMOUNT, data.getDiscountAmount());
+        intent.putExtra(PaymentBillActivity.EXTRA_FINAL_AMOUNT, data.getFinalAmount());
+        intent.putExtra(PaymentBillActivity.EXTRA_PAYMENT_URL, safeText(data.getPaymentUrl()));
+        startActivity(intent);
     }
 
     private void loadCheckoutData() {
@@ -401,21 +486,14 @@ public class CheckoutActivity extends AppCompatActivity {
         }
 
         paymentMethodLabels.clear();
-        if (paymentMethods.isEmpty()) {
-            paymentMethodLabels.add("Không có phương thức thanh toán");
-            selectedPaymentMethod = null;
-            btnPlaceOrder.setEnabled(false);
-        } else {
-            for (PaymentMethodResponse method : paymentMethods) {
-                paymentMethodLabels.add(buildPaymentMethodLabel(method));
-            }
-            selectedPaymentMethod = paymentMethods.get(0);
-            btnPlaceOrder.setEnabled(currentOrder != null
-                    && currentOrder.getDishes() != null
-                    && !currentOrder.getDishes().isEmpty());
+        paymentMethodLabels.add("Không chọn");
+        for (PaymentMethodResponse method : paymentMethods) {
+            paymentMethodLabels.add(buildPaymentMethodLabel(method));
         }
+        selectedPaymentMethod = null;
         paymentMethodAdapter.notifyDataSetChanged();
         spPaymentMethod.setSelection(0, false);
+        updatePlaceOrderButtonState();
     }
 
     private String buildPaymentMethodLabel(PaymentMethodResponse method) {
@@ -443,7 +521,7 @@ public class CheckoutActivity extends AppCompatActivity {
 
         dishAdapter.setItems(order.getDishes());
         tvEmptyDishes.setVisibility(View.GONE);
-        btnPlaceOrder.setEnabled(hasAvailablePaymentMethod());
+        updatePlaceOrderButtonState();
 
         String note = safeText(order.getNote());
         tvOrderNote.setText("Ghi chú: " + (note.isEmpty() ? "--" : note));
@@ -480,6 +558,13 @@ public class CheckoutActivity extends AppCompatActivity {
         progressCheckout.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
+    private void updatePlaceOrderButtonState() {
+        boolean hasItems = currentOrder != null
+                && currentOrder.getDishes() != null
+                && !currentOrder.getDishes().isEmpty();
+        btnPlaceOrder.setEnabled(hasItems && !isSubmittingCheckout);
+    }
+
     private String safeText(String value) {
         if (value == null) {
             return "";
@@ -510,7 +595,4 @@ public class CheckoutActivity extends AppCompatActivity {
         return String.format(Locale.getDefault(), "%.1f", value);
     }
 
-    private boolean hasAvailablePaymentMethod() {
-        return selectedPaymentMethod != null || !paymentMethods.isEmpty();
-    }
 }

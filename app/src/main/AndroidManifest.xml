@@ -36,16 +36,7 @@
         <!-- MainActivity - Routes/Navigation chính -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="chickenapp"
-                    android:host="payment-success" />
-            </intent-filter>
-        </activity>
+            android:exported="false" />
 
         <!-- DishDetailActivity - Chi tiết món ăn -->
         <activity
@@ -81,6 +72,30 @@
         <activity
             android:name=".activities.CheckoutActivity"
             android:exported="false" />
+
+        <!-- PaymentBillActivity - Payment bill summary -->
+        <activity
+            android:name=".activities.PaymentBillActivity"
+            android:exported="false" />
+
+        <!-- PaymentSuccessActivity - Payment success screen -->
+        <activity
+            android:name=".activities.PaymentSuccessActivity"
+            android:exported="false" />
+
+        <!-- PaymentCallbackActivity - Handle payment redirect callback -->
+        <activity
+            android:name=".activities.PaymentCallbackActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="chickenapp"
+                    android:host="payment-success" />
+            </intent-filter>
+        </activity>
 
         <!-- StepItemsActivity - Items by step category -->
         <activity

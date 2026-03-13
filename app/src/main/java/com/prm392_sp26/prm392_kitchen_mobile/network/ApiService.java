@@ -3,10 +3,14 @@ package com.prm392_sp26.prm392_kitchen_mobile.network;
 import com.prm392_sp26.prm392_kitchen_mobile.model.data.UserProfile;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CreateOrderRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.MomoCallbackRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.OrderCheckoutRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.LoginRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateOrderDishesRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.MomoCallbackResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderCheckoutResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
@@ -256,6 +260,15 @@ public interface ApiService {
     Call<BaseResponse<OrderResponse>> updateOrderDishes(
             @Header("Authorization") String authHeader,
             @Body UpdateOrderDishesRequest request);
+
+    @POST("api/orders/checkout")
+    Call<BaseResponse<OrderCheckoutResponse>> checkoutOrder(
+            @Header("Authorization") String authHeader,
+            @Body OrderCheckoutRequest request);
+
+    @POST("api/payments/momo/callback")
+    Call<BaseResponse<MomoCallbackResponse>> momoPaymentCallback(
+            @Body MomoCallbackRequest request);
 
     @POST
     Call<BaseResponse<OrderResponse>> createOrder(
