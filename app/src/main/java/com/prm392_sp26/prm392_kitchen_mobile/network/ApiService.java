@@ -15,6 +15,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.SearchResponse;
 
 
 import retrofit2.Call;
@@ -223,6 +224,13 @@ public interface ApiService {
         @Path("status") String status,
         @Query("page") int page,
         @Query("size") int size
+    );
+
+    @GET("api/search")
+    Call<BaseResponse<SearchResponse>> search(
+            @Header("Authorization") String authHeader,
+            @Query("keyword") String keyword,
+            @Query("limit") int limit
     );
 
     // ==================== ORDER MANAGEMENT APIs ====================

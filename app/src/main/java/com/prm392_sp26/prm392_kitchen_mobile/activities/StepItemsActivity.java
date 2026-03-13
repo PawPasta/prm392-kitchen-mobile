@@ -1,7 +1,13 @@
 package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -12,13 +18,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.prm392_sp26.prm392_kitchen_mobile.R;
+import com.prm392_sp26.prm392_kitchen_mobile.adapters.DishAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.StepItemCardAdapter;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.SearchResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
@@ -40,13 +50,18 @@ public class StepItemsActivity extends AppCompatActivity {
     public static final String EXTRA_STEP_ID = "extra_step_id";
     public static final String EXTRA_STEP_NAME = "extra_step_name";
     private static final int PAGE_SIZE = 10;
+    private static final int SEARCH_LIMIT = 10;
+    private static final long SEARCH_DEBOUNCE_MS = 1000L;
 
     private PrefsManager prefsManager;
-    private StepItemCardAdapter adapter;
+    private DishAdapter dishAdapter;
+    private StepItemCardAdapter itemAdapter;
+    private ConcatAdapter concatAdapter;
     private SwipeRefreshLayout swipeRefresh;
     private RecyclerView recyclerItems;
     private ProgressBar progressItems;
     private TextView tvEmpty;
+    private EditText etSearchKeyword;
 
     private View categoryCarb;
     private View categoryProtein;
@@ -55,6 +70,10 @@ public class StepItemsActivity extends AppCompatActivity {
     private View categoryExtra;
 
     private final Set<Integer> selectedStepIds = new LinkedHashSet<>();
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingSearchRunnable;
+    private Call<BaseResponse<SearchResponse>> searchCall;
+    private int loadSessionId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +105,7 @@ public class StepItemsActivity extends AppCompatActivity {
         progressItems = findViewById(R.id.progressStepItems);
         tvEmpty = findViewById(R.id.tvEmptyStepItems);
         swipeRefresh = findViewById(R.id.swipeRefreshStepItems);
+        etSearchKeyword = findViewById(R.id.etSearchKeyword);
 
         categoryCarb = findViewById(R.id.categoryCarb);
         categoryProtein = findViewById(R.id.categoryProtein);
@@ -95,15 +115,18 @@ public class StepItemsActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        adapter = new StepItemCardAdapter();
+        dishAdapter = new DishAdapter(new ArrayList<>(), this::openDishDetail);
+        itemAdapter = new StepItemCardAdapter();
+        concatAdapter = new ConcatAdapter(dishAdapter, itemAdapter);
         recyclerItems.setLayoutManager(new LinearLayoutManager(this));
-        recyclerItems.setAdapter(adapter);
+        recyclerItems.setAdapter(concatAdapter);
 
         setupCategoryNavigation();
+        setupSearchInput();
         updateCategorySelection();
 
-        swipeRefresh.setOnRefreshListener(this::loadItemsForSelectedSteps);
-        loadItemsForSelectedSteps();
+        swipeRefresh.setOnRefreshListener(this::reloadContentForCurrentState);
+        reloadContentForCurrentState();
     }
 
     private void setupCategoryNavigation() {
@@ -125,7 +148,7 @@ public class StepItemsActivity extends AppCompatActivity {
                 selectedStepIds.add(targetStepId);
             }
             updateCategorySelection();
-            loadItemsForSelectedSteps();
+            reloadContentForCurrentState();
         });
     }
 
@@ -152,10 +175,136 @@ public class StepItemsActivity extends AppCompatActivity {
         return rawStepId;
     }
 
+    private void setupSearchInput() {
+        if (etSearchKeyword == null) {
+            return;
+        }
+        etSearchKeyword.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (pendingSearchRunnable != null) {
+                    searchHandler.removeCallbacks(pendingSearchRunnable);
+                }
+                final String keyword = getSearchKeyword();
+                pendingSearchRunnable = () -> {
+                    if (keyword.isEmpty()) {
+                        loadItemsForSelectedSteps();
+                    } else {
+                        searchByKeyword(keyword);
+                    }
+                };
+                searchHandler.postDelayed(pendingSearchRunnable, SEARCH_DEBOUNCE_MS);
+            }
+        });
+    }
+
+    private void reloadContentForCurrentState() {
+        String keyword = getSearchKeyword();
+        if (keyword.isEmpty()) {
+            loadItemsForSelectedSteps();
+        } else {
+            searchByKeyword(keyword);
+        }
+    }
+
+    private String getSearchKeyword() {
+        if (etSearchKeyword == null || etSearchKeyword.getText() == null) {
+            return "";
+        }
+        return etSearchKeyword.getText().toString().trim();
+    }
+
+    private void searchByKeyword(String keyword) {
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        cancelSearchCall();
+        setLoading(true);
+        final int sessionId = ++loadSessionId;
+
+        searchCall = ApiClient.getInstance()
+                .getApiService()
+                .search("Bearer " + token, keyword, SEARCH_LIMIT);
+
+        searchCall.enqueue(new Callback<BaseResponse<SearchResponse>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<BaseResponse<SearchResponse>> call,
+                    @NonNull Response<BaseResponse<SearchResponse>> response) {
+                if (sessionId != loadSessionId) {
+                    return;
+                }
+
+                setLoading(false);
+                if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) {
+                    showSearchResults(new ArrayList<>(), new ArrayList<>(), keyword);
+                    Toast.makeText(StepItemsActivity.this,
+                            "Không tải được kết quả tìm kiếm",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                SearchResponse data = response.body().getData();
+                List<DishResponse> dishes = data != null && data.getDishes() != null
+                        ? data.getDishes()
+                        : new ArrayList<>();
+                List<ItemResponse> items = data != null && data.getItems() != null
+                        ? data.getItems()
+                        : new ArrayList<>();
+
+                showSearchResults(dishes, filterItemsBySelectedSteps(items), keyword);
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<BaseResponse<SearchResponse>> call,
+                    @NonNull Throwable t) {
+                if (sessionId != loadSessionId || call.isCanceled()) {
+                    return;
+                }
+                setLoading(false);
+                showSearchResults(new ArrayList<>(), new ArrayList<>(), keyword);
+                Toast.makeText(StepItemsActivity.this,
+                        "Lỗi kết nối: " + t.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private List<ItemResponse> filterItemsBySelectedSteps(List<ItemResponse> rawItems) {
+        if (rawItems == null) {
+            return new ArrayList<>();
+        }
+        if (selectedStepIds.isEmpty()) {
+            return new ArrayList<>(rawItems);
+        }
+        List<ItemResponse> filteredItems = new ArrayList<>();
+        for (ItemResponse item : rawItems) {
+            if (item != null && selectedStepIds.contains(item.getStepId())) {
+                filteredItems.add(item);
+            }
+        }
+        return filteredItems;
+    }
+
     private void loadItemsForSelectedSteps() {
+        cancelSearchCall();
+        final int sessionId = ++loadSessionId;
+
         if (selectedStepIds.isEmpty()) {
             setLoading(false);
-            showItems(new ArrayList<>());
+            showCategoryItems(new ArrayList<>());
             tvEmpty.setText("Chọn ít nhất một danh mục");
             return;
         }
@@ -183,6 +332,9 @@ public class StepItemsActivity extends AppCompatActivity {
                         public void onResponse(
                                 @NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
                                 @NonNull Response<BaseResponse<PageResponse<ItemResponse>>> response) {
+                            if (sessionId != loadSessionId) {
+                                return;
+                            }
                             if (response.isSuccessful() && response.body() != null
                                     && response.body().isSuccess()
                                     && response.body().getData() != null
@@ -191,32 +343,49 @@ public class StepItemsActivity extends AppCompatActivity {
                             } else {
                                 failedRequests[0]++;
                             }
-                            onStepItemsRequestFinished(finishedRequests, totalRequests, failedRequests[0], mergedItems);
+                            onStepItemsRequestFinished(
+                                    sessionId,
+                                    finishedRequests,
+                                    totalRequests,
+                                    failedRequests[0],
+                                    mergedItems);
                         }
 
                         @Override
                         public void onFailure(
                                 @NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
                                 @NonNull Throwable t) {
+                            if (sessionId != loadSessionId) {
+                                return;
+                            }
                             failedRequests[0]++;
-                            onStepItemsRequestFinished(finishedRequests, totalRequests, failedRequests[0], mergedItems);
+                            onStepItemsRequestFinished(
+                                    sessionId,
+                                    finishedRequests,
+                                    totalRequests,
+                                    failedRequests[0],
+                                    mergedItems);
                         }
                     });
         }
     }
 
     private void onStepItemsRequestFinished(
+            int sessionId,
             int[] finishedRequests,
             int totalRequests,
             int failedRequests,
             List<ItemResponse> mergedItems) {
+        if (sessionId != loadSessionId) {
+            return;
+        }
         finishedRequests[0]++;
         if (finishedRequests[0] < totalRequests) {
             return;
         }
 
         setLoading(false);
-        showItems(deduplicateByItemId(mergedItems));
+        showCategoryItems(deduplicateByItemId(mergedItems));
         if (failedRequests > 0) {
             Toast.makeText(this,
                     "Một số danh mục tải thất bại",
@@ -249,13 +418,54 @@ public class StepItemsActivity extends AppCompatActivity {
         swipeRefresh.setRefreshing(false);
     }
 
-    private void showItems(List<ItemResponse> items) {
-        adapter.setItems(items);
+    private void showCategoryItems(List<ItemResponse> items) {
+        dishAdapter.updateDishes(new ArrayList<>());
+        itemAdapter.setItems(items);
         boolean isEmpty = items == null || items.isEmpty();
         recyclerItems.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         if (isEmpty && !selectedStepIds.isEmpty()) {
             tvEmpty.setText("Không có item cho danh mục đã chọn");
         }
+    }
+
+    private void showSearchResults(List<DishResponse> dishes, List<ItemResponse> items, String keyword) {
+        dishAdapter.updateDishes(dishes == null ? new ArrayList<>() : dishes);
+        itemAdapter.setItems(items == null ? new ArrayList<>() : items);
+
+        boolean hasDishes = dishes != null && !dishes.isEmpty();
+        boolean hasItems = items != null && !items.isEmpty();
+        boolean isEmpty = !hasDishes && !hasItems;
+
+        recyclerItems.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+        tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        if (isEmpty) {
+            tvEmpty.setText("Không tìm thấy kết quả cho \"" + keyword + "\"");
+        }
+    }
+
+    private void openDishDetail(DishResponse dish) {
+        if (dish == null) {
+            return;
+        }
+        Intent intent = new Intent(this, DishDetailActivity.class);
+        intent.putExtra("dishId", dish.getDishId());
+        startActivity(intent);
+    }
+
+    private void cancelSearchCall() {
+        if (searchCall != null) {
+            searchCall.cancel();
+            searchCall = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (pendingSearchRunnable != null) {
+            searchHandler.removeCallbacks(pendingSearchRunnable);
+        }
+        cancelSearchCall();
     }
 }
