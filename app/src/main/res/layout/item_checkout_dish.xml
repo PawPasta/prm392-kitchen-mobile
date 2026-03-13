@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    app:cardBackgroundColor="@color/colorSurface"
-    app:cardCornerRadius="14dp"
-    app:cardElevation="1dp">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp">
 
         <ImageView
             android:id="@+id/ivCheckoutDishImage"
@@ -64,4 +61,32 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+    <TextView
+        android:id="@+id/tvCheckoutExpandToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="78dp"
+        android:layout_marginTop="2dp"
+        android:text="Xem thành phần ▼"
+        android:textColor="@color/colorPrimary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/layoutCheckoutDishComponents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/viewCheckoutDishDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:background="@color/cardStroke"
+        android:alpha="0.6" />
+
+</LinearLayout>
