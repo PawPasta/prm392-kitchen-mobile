@@ -140,6 +140,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         int statusColor = holder.itemView.getContext()
                 .getColor(StatusColorUtil.getStatusColorRes(status));
         holder.tvStatus.setTextColor(statusColor);
+        holder.viewStatusAccent.setBackgroundColor(statusColor);
 
         holder.tvCreatedAt.setText("Ngày: " + formatDateTime(item.getCreatedAt()));
         String pickup = item.getPickupAt();
@@ -160,6 +161,7 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 && cancelEnabled
                 && onCancelClickListener != null
                 && shouldShowCancel(item.getStatus());
+        holder.layoutOrderActions.setVisibility(showCancel ? View.VISIBLE : View.GONE);
         holder.btnCancelOrder.setVisibility(showCancel ? View.VISIBLE : View.GONE);
         holder.btnCancelOrder.setOnClickListener(showCancel ? v -> onCancelClickListener.onCancelClick(item) : null);
 
@@ -307,6 +309,8 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         private final TextView tvTotal;
         private final Button btnCancelOrder;
         private final CheckBox cbSelectOrder;
+        private final View viewStatusAccent;
+        private final View layoutOrderActions;
 
         OrderViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -318,6 +322,8 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
             tvTotal = itemView.findViewById(R.id.tvTotal);
             btnCancelOrder = itemView.findViewById(R.id.btnCancelOrder);
             cbSelectOrder = itemView.findViewById(R.id.cbSelectOrder);
+            viewStatusAccent = itemView.findViewById(R.id.viewStatusAccent);
+            layoutOrderActions = itemView.findViewById(R.id.layoutOrderActions);
         }
     }
 }
