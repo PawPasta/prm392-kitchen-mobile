@@ -50,6 +50,7 @@ public class StepItemsActivity extends AppCompatActivity {
     public static final String EXTRA_STEP_ID = "extra_step_id";
     public static final String EXTRA_STEP_NAME = "extra_step_name";
     private static final int PAGE_SIZE = 10;
+    private static final int DISH_PAGE_SIZE = 10;
     private static final int SEARCH_LIMIT = 10;
     private static final long SEARCH_DEBOUNCE_MS = 1000L;
 
@@ -98,8 +99,10 @@ public class StepItemsActivity extends AppCompatActivity {
         });
 
         prefsManager = PrefsManager.getInstance(this);
-        int initialStepId = sanitizeStepId(getIntent().getIntExtra(EXTRA_STEP_ID, 1));
-        selectedStepIds.add(initialStepId);
+        int initialStepId = getIntent().getIntExtra(EXTRA_STEP_ID, 0);
+        if (isValidStepId(initialStepId)) {
+            selectedStepIds.add(initialStepId);
+        }
 
         recyclerItems = findViewById(R.id.recyclerStepItems);
         progressItems = findViewById(R.id.progressStepItems);
@@ -168,11 +171,8 @@ public class StepItemsActivity extends AppCompatActivity {
                 selected ? R.drawable.bg_category_tile_selected : R.drawable.bg_category_tile);
     }
 
-    private int sanitizeStepId(int rawStepId) {
-        if (rawStepId < 1 || rawStepId > 5) {
-            return 1;
-        }
-        return rawStepId;
+    private boolean isValidStepId(int stepId) {
+        return stepId >= 1 && stepId <= 5;
     }
 
     private void setupSearchInput() {
@@ -209,7 +209,11 @@ public class StepItemsActivity extends AppCompatActivity {
     private void reloadContentForCurrentState() {
         String keyword = getSearchKeyword();
         if (keyword.isEmpty()) {
-            loadItemsForSelectedSteps();
+            if (selectedStepIds.isEmpty()) {
+                loadAvailableDishes();
+            } else {
+                loadItemsForSelectedSteps();
+            }
         } else {
             searchByKeyword(keyword);
         }
@@ -262,8 +266,11 @@ public class StepItemsActivity extends AppCompatActivity {
                 List<ItemResponse> items = data != null && data.getItems() != null
                         ? data.getItems()
                         : new ArrayList<>();
-
-                showSearchResults(dishes, filterItemsBySelectedSteps(items), keyword);
+                if (selectedStepIds.isEmpty()) {
+                    showSearchResults(dishes, new ArrayList<>(), keyword);
+                } else {
+                    showSearchResults(new ArrayList<>(), filterItemsBySelectedSteps(items), keyword);
+                }
             }
 
             @Override
@@ -286,9 +293,6 @@ public class StepItemsActivity extends AppCompatActivity {
         if (rawItems == null) {
             return new ArrayList<>();
         }
-        if (selectedStepIds.isEmpty()) {
-            return new ArrayList<>(rawItems);
-        }
         List<ItemResponse> filteredItems = new ArrayList<>();
         for (ItemResponse item : rawItems) {
             if (item != null && selectedStepIds.contains(item.getStepId())) {
@@ -296,6 +300,59 @@ public class StepItemsActivity extends AppCompatActivity {
             }
         }
         return filteredItems;
+    }
+
+    private void loadAvailableDishes() {
+        cancelSearchCall();
+        final int sessionId = ++loadSessionId;
+
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        setLoading(true);
+        ApiClient.getInstance()
+                .getApiService()
+                .getDishes("Bearer " + token, 0, DISH_PAGE_SIZE)
+                .enqueue(new Callback<BaseResponse<PageResponse<DishResponse>>>() {
+                    @Override
+                    public void onResponse(
+                            @NonNull Call<BaseResponse<PageResponse<DishResponse>>> call,
+                            @NonNull Response<BaseResponse<PageResponse<DishResponse>>> response) {
+                        if (sessionId != loadSessionId) {
+                            return;
+                        }
+                        setLoading(false);
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            List<DishResponse> dishes = response.body().getData().getContent();
+                            showAvailableDishes(dishes == null ? new ArrayList<>() : dishes);
+                            return;
+                        }
+                        showAvailableDishes(new ArrayList<>());
+                        Toast.makeText(StepItemsActivity.this,
+                                "Không tải được danh sách món ăn",
+                                Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(
+                            @NonNull Call<BaseResponse<PageResponse<DishResponse>>> call,
+                            @NonNull Throwable t) {
+                        if (sessionId != loadSessionId) {
+                            return;
+                        }
+                        setLoading(false);
+                        showAvailableDishes(new ArrayList<>());
+                        Toast.makeText(StepItemsActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void loadItemsForSelectedSteps() {
@@ -426,6 +483,17 @@ public class StepItemsActivity extends AppCompatActivity {
         tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         if (isEmpty && !selectedStepIds.isEmpty()) {
             tvEmpty.setText("Không có item cho danh mục đã chọn");
+        }
+    }
+
+    private void showAvailableDishes(List<DishResponse> dishes) {
+        dishAdapter.updateDishes(dishes == null ? new ArrayList<>() : dishes);
+        itemAdapter.setItems(new ArrayList<>());
+        boolean isEmpty = dishes == null || dishes.isEmpty();
+        recyclerItems.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+        tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        if (isEmpty) {
+            tvEmpty.setText("Không có món ăn có sẵn");
         }
     }
 

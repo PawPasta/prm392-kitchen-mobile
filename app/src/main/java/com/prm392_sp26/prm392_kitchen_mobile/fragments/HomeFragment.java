@@ -130,7 +130,7 @@ public class HomeFragment extends Fragment {
         if (searchBar == null) {
             return;
         }
-        searchBar.setOnClickListener(v -> openStepItems(1, "Carb"));
+        searchBar.setOnClickListener(v -> openStepItems(0, "Tìm kiếm"));
     }
 
     private void bindCategoryClick(@NonNull View root, int viewId, int stepId, @NonNull String stepName) {
