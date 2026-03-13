@@ -74,11 +74,15 @@ public class StepItemsActivity extends AppCompatActivity {
     private final Map<Integer, Integer> nextPageByStepId = new LinkedHashMap<>();
     private final Map<Integer, Boolean> hasMoreByStepId = new LinkedHashMap<>();
     private final List<ItemResponse> loadedCategoryItems = new ArrayList<>();
+    private final List<DishResponse> loadedDishes = new ArrayList<>();
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable pendingSearchRunnable;
     private Call<BaseResponse<SearchResponse>> searchCall;
     private int loadSessionId = 0;
     private boolean isLoadingMoreCategoryItems = false;
+    private boolean isLoadingMoreDishes = false;
+    private boolean hasMoreDishPages = true;
+    private int nextDishPage = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -201,7 +205,7 @@ public class StepItemsActivity extends AppCompatActivity {
                 final String keyword = getSearchKeyword();
                 pendingSearchRunnable = () -> {
                     if (keyword.isEmpty()) {
-                        loadItemsForSelectedSteps();
+                        reloadContentForCurrentState();
                     } else {
                         searchByKeyword(keyword);
                     }
@@ -216,7 +220,7 @@ public class StepItemsActivity extends AppCompatActivity {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if (dy <= 0 || !shouldLoadNextCategoryPages()) {
+                if (dy <= 0) {
                     return;
                 }
 
@@ -231,7 +235,11 @@ public class StepItemsActivity extends AppCompatActivity {
                     return;
                 }
                 if (lastVisible >= totalItems - 2) {
-                    loadNextCategoryPages();
+                    if (shouldLoadNextCategoryPages()) {
+                        loadNextCategoryPages();
+                    } else if (shouldLoadNextDishesPage()) {
+                        loadNextDishesPage();
+                    }
                 }
             }
         });
@@ -244,10 +252,12 @@ public class StepItemsActivity extends AppCompatActivity {
                 clearCategoryPaginationState();
                 loadAvailableDishes();
             } else {
+                clearDishPaginationState();
                 loadItemsForSelectedSteps();
             }
         } else {
             clearCategoryPaginationState();
+            clearDishPaginationState();
             searchByKeyword(keyword);
         }
     }
@@ -345,47 +355,8 @@ public class StepItemsActivity extends AppCompatActivity {
             return;
         }
 
-        setLoading(true);
-        ApiClient.getInstance()
-                .getApiService()
-                .getDishes("Bearer " + token, 0, DISH_PAGE_SIZE)
-                .enqueue(new Callback<BaseResponse<PageResponse<DishResponse>>>() {
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<BaseResponse<PageResponse<DishResponse>>> call,
-                            @NonNull Response<BaseResponse<PageResponse<DishResponse>>> response) {
-                        if (sessionId != loadSessionId) {
-                            return;
-                        }
-                        setLoading(false);
-                        if (response.isSuccessful()
-                                && response.body() != null
-                                && response.body().isSuccess()
-                                && response.body().getData() != null) {
-                            List<DishResponse> dishes = response.body().getData().getContent();
-                            showAvailableDishes(dishes == null ? new ArrayList<>() : dishes);
-                            return;
-                        }
-                        showAvailableDishes(new ArrayList<>());
-                        Toast.makeText(StepItemsActivity.this,
-                                "Không tải được danh sách món ăn",
-                                Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<BaseResponse<PageResponse<DishResponse>>> call,
-                            @NonNull Throwable t) {
-                        if (sessionId != loadSessionId) {
-                            return;
-                        }
-                        setLoading(false);
-                        showAvailableDishes(new ArrayList<>());
-                        Toast.makeText(StepItemsActivity.this,
-                                "Lỗi kết nối: " + t.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+        initializeDishPaginationState();
+        loadDishesPage(sessionId, "Bearer " + token, false);
     }
 
     private void loadItemsForSelectedSteps() {
@@ -460,6 +431,115 @@ public class StepItemsActivity extends AppCompatActivity {
             return false;
         }
         return hasAnyRemainingCategoryPages();
+    }
+
+    private void initializeDishPaginationState() {
+        loadedDishes.clear();
+        isLoadingMoreDishes = false;
+        hasMoreDishPages = true;
+        nextDishPage = 0;
+    }
+
+    private void clearDishPaginationState() {
+        loadedDishes.clear();
+        isLoadingMoreDishes = false;
+        hasMoreDishPages = true;
+        nextDishPage = 0;
+    }
+
+    private boolean shouldLoadNextDishesPage() {
+        if (isLoadingMoreDishes || !hasMoreDishPages) {
+            return false;
+        }
+        if (recyclerItems.getVisibility() != View.VISIBLE) {
+            return false;
+        }
+        if (!getSearchKeyword().isEmpty()) {
+            return false;
+        }
+        return selectedStepIds.isEmpty();
+    }
+
+    private void loadNextDishesPage() {
+        if (!shouldLoadNextDishesPage()) {
+            return;
+        }
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        loadDishesPage(loadSessionId, "Bearer " + token, true);
+    }
+
+    private void loadDishesPage(int sessionId, String bearerToken, boolean appendMode) {
+        if (sessionId != loadSessionId || !hasMoreDishPages || isLoadingMoreDishes) {
+            return;
+        }
+
+        isLoadingMoreDishes = true;
+        if (!appendMode) {
+            setLoading(true);
+        }
+
+        final int page = nextDishPage;
+        ApiClient.getInstance()
+                .getApiService()
+                .getDishes(bearerToken, page, DISH_PAGE_SIZE)
+                .enqueue(new Callback<BaseResponse<PageResponse<DishResponse>>>() {
+                    @Override
+                    public void onResponse(
+                            @NonNull Call<BaseResponse<PageResponse<DishResponse>>> call,
+                            @NonNull Response<BaseResponse<PageResponse<DishResponse>>> response) {
+                        if (sessionId != loadSessionId) {
+                            return;
+                        }
+                        isLoadingMoreDishes = false;
+                        if (!appendMode) {
+                            setLoading(false);
+                        }
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            PageResponse<DishResponse> pageData = response.body().getData();
+                            List<DishResponse> dishes = pageData.getContent();
+                            if (!appendMode) {
+                                loadedDishes.clear();
+                            }
+                            if (dishes != null && !dishes.isEmpty()) {
+                                loadedDishes.addAll(dishes);
+                            }
+                            hasMoreDishPages = !pageData.isLast();
+                            nextDishPage = page + 1;
+                            showAvailableDishes(new ArrayList<>(loadedDishes));
+                            return;
+                        }
+                        if (!appendMode) {
+                            showAvailableDishes(new ArrayList<>());
+                        }
+                        Toast.makeText(StepItemsActivity.this,
+                                "Không tải được danh sách món ăn",
+                                Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(
+                            @NonNull Call<BaseResponse<PageResponse<DishResponse>>> call,
+                            @NonNull Throwable t) {
+                        if (sessionId != loadSessionId) {
+                            return;
+                        }
+                        isLoadingMoreDishes = false;
+                        if (!appendMode) {
+                            setLoading(false);
+                            showAvailableDishes(new ArrayList<>());
+                        }
+                        Toast.makeText(StepItemsActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private boolean hasAnyRemainingCategoryPages() {

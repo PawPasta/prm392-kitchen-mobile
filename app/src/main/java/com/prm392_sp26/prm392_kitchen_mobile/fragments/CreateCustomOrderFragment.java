@@ -160,26 +160,42 @@ public class CreateCustomOrderFragment extends Fragment {
         }
 
         setLoading(true);
+        loadAllItemsPage("Bearer " + token, 0, new ArrayList<>());
+    }
 
-        // Load first page with high page size to get all items
+    private void loadAllItemsPage(String bearerToken, int page, List<ItemResponse> accumulator) {
         ApiClient.getInstance()
                 .getApiService()
-                .getAllItems("Bearer " + token, 0, 1000)
+                .getAllItems(bearerToken, page, 100)
                 .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
                     @Override
                     public void onResponse(@NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
                                            @NonNull Response<BaseResponse<PageResponse<ItemResponse>>> response) {
-                        setLoading(false);
-
-                        if (response.isSuccessful() && response.body() != null) {
-                            BaseResponse<PageResponse<ItemResponse>> baseResponse = response.body();
-                            if (baseResponse.isSuccess() && baseResponse.getData() != null) {
-                                List<ItemResponse> allItems = baseResponse.getData().getContent();
-                                groupAndDisplayItems(allItems);
-                            }
-                        } else {
+                        if (!response.isSuccessful() || response.body() == null) {
+                            setLoading(false);
                             Toast.makeText(requireContext(), "Lỗi tải nguyên liệu", Toast.LENGTH_SHORT).show();
+                            return;
                         }
+
+                        BaseResponse<PageResponse<ItemResponse>> baseResponse = response.body();
+                        if (!baseResponse.isSuccess() || baseResponse.getData() == null) {
+                            setLoading(false);
+                            Toast.makeText(requireContext(), "Lỗi tải nguyên liệu", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        PageResponse<ItemResponse> pageData = baseResponse.getData();
+                        List<ItemResponse> pageItems = pageData.getContent();
+                        if (pageItems != null && !pageItems.isEmpty()) {
+                            accumulator.addAll(pageItems);
+                        }
+
+                        if (pageData.isLast()) {
+                            setLoading(false);
+                            groupAndDisplayItems(accumulator);
+                            return;
+                        }
+                        loadAllItemsPage(bearerToken, page + 1, accumulator);
                     }
 
                     @Override
@@ -339,7 +355,6 @@ public class CreateCustomOrderFragment extends Fragment {
         }
     }
 }
-
 
 
 

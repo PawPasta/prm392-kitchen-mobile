@@ -110,35 +110,35 @@ public class CartFragment extends Fragment {
         progressCart.setVisibility(View.VISIBLE);
         layoutCartEmpty.setVisibility(View.GONE);
         recyclerCart.setVisibility(View.GONE);
+        loadCartOrdersPage("Bearer " + token, 0, new ArrayList<>());
+    }
 
+    private void loadCartOrdersPage(String bearerToken, int page, List<OrderHistoryResponse.OrderItem> accumulator) {
         ApiClient.getInstance().getApiService()
-                .getOrderHistory("Bearer " + token, 0, 100, "CREATED")
+                .getOrderHistory(bearerToken, page, 50, "CREATED")
                 .enqueue(new Callback<BaseResponse<OrderHistoryResponse>>() {
                     @Override
                     public void onResponse(@NonNull Call<BaseResponse<OrderHistoryResponse>> call,
                                            @NonNull Response<BaseResponse<OrderHistoryResponse>> response) {
-                        progressCart.setVisibility(View.GONE);
-                        swipeRefreshCart.setRefreshing(false);
-
                         if (response.isSuccessful() && response.body() != null
                                 && response.body().isSuccess()
                                 && response.body().getData() != null
                                 && response.body().getData().getOrders() != null) {
-
-                            List<OrderHistoryResponse.OrderItem> orders =
-                                    response.body().getData().getOrders().getContent();
-
-                            if (orders == null || orders.isEmpty()) {
-                                cachedOrders.clear();
-                                showEmpty();
-                            } else {
-                                cachedOrders.clear();
-                                cachedOrders.addAll(orders);
-                                applySortAndRender();
+                            OrderHistoryResponse.OrderPage orderPage = response.body().getData().getOrders();
+                            List<OrderHistoryResponse.OrderItem> orders = orderPage.getContent();
+                            if (orders != null && !orders.isEmpty()) {
+                                accumulator.addAll(orders);
                             }
-                        } else {
-                            showEmpty();
+                            if (orderPage.isLast()) {
+                                finalizeCartOrders(accumulator);
+                                return;
+                            }
+                            loadCartOrdersPage(bearerToken, page + 1, accumulator);
+                            return;
                         }
+                        progressCart.setVisibility(View.GONE);
+                        swipeRefreshCart.setRefreshing(false);
+                        showEmpty();
                     }
 
                     @Override
@@ -150,6 +150,19 @@ public class CartFragment extends Fragment {
                         Toast.makeText(requireContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void finalizeCartOrders(List<OrderHistoryResponse.OrderItem> orders) {
+        progressCart.setVisibility(View.GONE);
+        swipeRefreshCart.setRefreshing(false);
+        if (orders == null || orders.isEmpty()) {
+            cachedOrders.clear();
+            showEmpty();
+            return;
+        }
+        cachedOrders.clear();
+        cachedOrders.addAll(orders);
+        applySortAndRender();
     }
 
     private void showEmpty() {

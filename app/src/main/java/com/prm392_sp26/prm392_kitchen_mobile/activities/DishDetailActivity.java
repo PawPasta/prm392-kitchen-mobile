@@ -289,25 +289,47 @@ public class DishDetailActivity extends AppCompatActivity {
 
     private void loadStepItems(int dishId, int stepId) {
         String token = "Bearer " + prefsManager.getAccessToken();
+        loadStepItemsPage(token, dishId, stepId, 0, new ArrayList<>());
+    }
+
+    private void loadStepItemsPage(
+            String token,
+            int dishId,
+            int stepId,
+            int page,
+            @NonNull List<ItemResponse> accumulator) {
 
         ApiClient.getInstance().getApiService()
-            .getItemsByDishStep(token, dishId, stepId, 0, 20)
+            .getItemsByDishStep(token, dishId, stepId, page, 20)
             .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
                 @Override
                 public void onResponse(@NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
                                        @NonNull Response<BaseResponse<PageResponse<ItemResponse>>> response) {
                     if (response.isSuccessful() && response.body() != null
                             && response.body().isSuccess() && response.body().getData() != null) {
-                        List<ItemResponse> items = response.body().getData().getContent();
-                        if (items != null && stepAdapter != null) {
-                            stepAdapter.setItemsForStep(stepId, items);
+                        PageResponse<ItemResponse> pageData = response.body().getData();
+                        List<ItemResponse> items = pageData.getContent();
+                        if (items != null && !items.isEmpty()) {
+                            accumulator.addAll(items);
                         }
+                        if (pageData.isLast()) {
+                            if (stepAdapter != null) {
+                                stepAdapter.setItemsForStep(stepId, new ArrayList<>(accumulator));
+                            }
+                        } else {
+                            loadStepItemsPage(token, dishId, stepId, page + 1, accumulator);
+                        }
+                    } else if (stepAdapter != null && !accumulator.isEmpty()) {
+                        stepAdapter.setItemsForStep(stepId, new ArrayList<>(accumulator));
                     }
                 }
 
                 @Override
                 public void onFailure(@NonNull Call<BaseResponse<PageResponse<ItemResponse>>> call,
                                       @NonNull Throwable t) {
+                    if (stepAdapter != null && !accumulator.isEmpty()) {
+                        stepAdapter.setItemsForStep(stepId, new ArrayList<>(accumulator));
+                    }
                     Log.e(TAG, "Load items for step " + stepId + " failed", t);
                 }
             });

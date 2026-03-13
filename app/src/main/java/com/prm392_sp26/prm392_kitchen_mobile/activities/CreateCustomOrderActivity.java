@@ -148,93 +148,129 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
 
     private void loadStepsAndItems() {
         String token = "Bearer " + prefsManager.getAccessToken();
+        loadAllItemsPage(token, 0, new ArrayList<>());
+    }
 
-        // Lấy tất cả items (bao gồm stepName = nhóm thành phần: carb, protein, sauce...)
+    private void loadAllItemsPage(String token, int page, List<ItemResponse> accumulator) {
         ApiClient.getInstance()
                 .getApiService()
-                .getAllItems(token, 0, 100)
+                .getAllItems(token, page, 100)
                 .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
-            @Override
-            public void onResponse(Call<BaseResponse<PageResponse<ItemResponse>>> call, Response<BaseResponse<PageResponse<ItemResponse>>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    List<ItemResponse> allItems = response.body().getData().getContent();
-                    if (allItems != null && !allItems.isEmpty()) {
-                        // Nhóm items theo stepName (carb, protein, sauce, etc.)
-                        Map<String, List<ItemResponse>> groupedItems = new HashMap<>();
-                        Map<String, Integer> stepNameToId = new HashMap<>();
-
-                        for (ItemResponse item : allItems) {
-                            String stepName = item.getStepName();
-                            int stepId = item.getStepId();
-
-                            // Bỏ qua item DISABLE / EXPIRED — không đưa vào danh sách chọn
-                            if (!"ENABLE".equals(item.getStatus())) continue;
-
-                            if (stepName != null && !stepName.isEmpty()) {
-                                if (!groupedItems.containsKey(stepName)) {
-                                    groupedItems.put(stepName, new ArrayList<>());
-                                    stepNameToId.put(stepName, stepId);
-                                }
-                                groupedItems.get(stepName).add(item);
+                    @Override
+                    public void onResponse(
+                            Call<BaseResponse<PageResponse<ItemResponse>>> call,
+                            Response<BaseResponse<PageResponse<ItemResponse>>> response) {
+                        if (response.isSuccessful() && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            PageResponse<ItemResponse> pageData = response.body().getData();
+                            List<ItemResponse> pageItems = pageData.getContent();
+                            if (pageItems != null && !pageItems.isEmpty()) {
+                                accumulator.addAll(pageItems);
                             }
+                            if (pageData.isLast()) {
+                                processAllItems(accumulator);
+                                return;
+                            }
+                            loadAllItemsPage(token, page + 1, accumulator);
+                            return;
                         }
-
-                        // Tạo steps từ groupedItems
-                        steps.clear();
-                        for (Map.Entry<String, Integer> entry : stepNameToId.entrySet()) {
-                            String stepName = entry.getKey();
-                            int stepId = entry.getValue();
-
-                            steps.add(new DishStepResponse() {
-                                @Override
-                                public int getStepId() { return stepId; }
-                                @Override
-                                public String getStepName() { return stepName; }
-                            });
-
-                            // Lưu items cho step này
-                            stepItemsMap.put(stepId, groupedItems.get(stepName));
-                        }
-
-                        // Display items for first step
-                        if (!steps.isEmpty()) {
-                            setCurrentStep(0);
-                        }
-                        updateProgressAndCalories();
-                    } else {
-                        Toast.makeText(CreateCustomOrderActivity.this, "Không có nguyên liệu nào", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CreateCustomOrderActivity.this,
+                                "Lỗi tải danh sách nguyên liệu",
+                                Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    Toast.makeText(CreateCustomOrderActivity.this, "Lỗi tải danh sách nguyên liệu", Toast.LENGTH_SHORT).show();
-                }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<PageResponse<ItemResponse>>> call, Throwable t) {
+                        Toast.makeText(CreateCustomOrderActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void processAllItems(List<ItemResponse> allItems) {
+        if (allItems == null || allItems.isEmpty()) {
+            Toast.makeText(this, "Không có nguyên liệu nào", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, List<ItemResponse>> groupedItems = new HashMap<>();
+        Map<String, Integer> stepNameToId = new HashMap<>();
+
+        for (ItemResponse item : allItems) {
+            String stepName = item.getStepName();
+            int stepId = item.getStepId();
+
+            if (!"ENABLE".equals(item.getStatus())) {
+                continue;
             }
 
-            @Override
-            public void onFailure(Call<BaseResponse<PageResponse<ItemResponse>>> call, Throwable t) {
-                Toast.makeText(CreateCustomOrderActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            if (stepName != null && !stepName.isEmpty()) {
+                if (!groupedItems.containsKey(stepName)) {
+                    groupedItems.put(stepName, new ArrayList<>());
+                    stepNameToId.put(stepName, stepId);
+                }
+                groupedItems.get(stepName).add(item);
             }
-        });
+        }
+
+        steps.clear();
+        stepItemsMap.clear();
+        for (Map.Entry<String, Integer> entry : stepNameToId.entrySet()) {
+            String stepName = entry.getKey();
+            int stepId = entry.getValue();
+
+            steps.add(new DishStepResponse() {
+                @Override
+                public int getStepId() { return stepId; }
+                @Override
+                public String getStepName() { return stepName; }
+            });
+            stepItemsMap.put(stepId, groupedItems.get(stepName));
+        }
+
+        if (!steps.isEmpty()) {
+            setCurrentStep(0);
+        }
+        updateProgressAndCalories();
     }
 
     private void loadItemsForStep(int stepId) {
         String token = "Bearer " + prefsManager.getAccessToken();
+        loadItemsForStepPage(token, stepId, 0, new ArrayList<>());
+    }
 
-        // API để lấy items cho step
+    private void loadItemsForStepPage(
+            String token,
+            int stepId,
+            int page,
+            List<ItemResponse> accumulator) {
         ApiClient.getInstance()
                 .getApiService()
-                .getItemsByStep(token, stepId, 0, 50)
+                .getItemsByStep(token, stepId, page, 50)
                 .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
             @Override
             public void onResponse(Call<BaseResponse<PageResponse<ItemResponse>>> call, Response<BaseResponse<PageResponse<ItemResponse>>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    List<ItemResponse> items = response.body().getData().getContent();
-                    if (items != null) {
-                        stepItemsMap.put(stepId, items);
-                        displayItemsForStep(stepId);
-                    }
-                } else {
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()
+                        || response.body().getData() == null) {
                     Toast.makeText(CreateCustomOrderActivity.this, "Không có nguyên liệu cho bước này", Toast.LENGTH_SHORT).show();
+                    return;
                 }
+
+                PageResponse<ItemResponse> pageData = response.body().getData();
+                List<ItemResponse> items = pageData.getContent();
+                if (items != null && !items.isEmpty()) {
+                    accumulator.addAll(items);
+                }
+                if (pageData.isLast()) {
+                    stepItemsMap.put(stepId, new ArrayList<>(accumulator));
+                    displayItemsForStep(stepId);
+                    return;
+                }
+                loadItemsForStepPage(token, stepId, page + 1, accumulator);
             }
 
             @Override

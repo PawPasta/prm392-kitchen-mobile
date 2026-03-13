@@ -245,9 +245,13 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void loadPromotions(String token) {
+        loadPromotionsPage(token, 0, new ArrayList<>());
+    }
+
+    private void loadPromotionsPage(String token, int page, List<PromotionResponse> accumulator) {
         ApiClient.getInstance()
                 .getApiService()
-                .getPromotions("Bearer " + token, 0, 10)
+                .getPromotions("Bearer " + token, page, 10)
                 .enqueue(new Callback<BaseResponse<PageResponse<PromotionResponse>>>() {
                     @Override
                     public void onResponse(
@@ -256,13 +260,22 @@ public class CheckoutActivity extends AppCompatActivity {
                         if (response.isSuccessful()
                                 && response.body() != null
                                 && response.body().isSuccess()
-                                && response.body().getData() != null
-                                && response.body().getData().getContent() != null) {
-                            bindPromotions(response.body().getData().getContent());
+                                && response.body().getData() != null) {
+                            PageResponse<PromotionResponse> pageData = response.body().getData();
+                            List<PromotionResponse> content = pageData.getContent();
+                            if (content != null && !content.isEmpty()) {
+                                accumulator.addAll(content);
+                            }
+                            if (pageData.isLast()) {
+                                bindPromotions(accumulator);
+                                finishOneCall();
+                                return;
+                            }
+                            loadPromotionsPage(token, page + 1, accumulator);
                         } else {
                             bindPromotions(new ArrayList<>());
+                            finishOneCall();
                         }
-                        finishOneCall();
                     }
 
                     @Override
