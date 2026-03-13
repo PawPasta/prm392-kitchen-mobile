@@ -45,19 +45,19 @@ public class PaymentSuccessActivity extends AppCompatActivity {
         String resultMessage = safeText(intent.getStringExtra(EXTRA_RESULT_MESSAGE));
 
         ((TextView) findViewById(R.id.tvPaymentSuccessMessage))
-                .setText(message.isEmpty() ? "Xác nhận thanh toán thành công" : message);
+                .setText(message.isEmpty() ? "Payment Successful" : message);
         ((TextView) findViewById(R.id.tvPaymentSuccessOrderId))
-                .setText("Order ID: " + (orderId.isEmpty() ? "--" : orderId));
+                .setText(orderId.isEmpty() ? "--" : orderId);
         ((TextView) findViewById(R.id.tvPaymentSuccessPaymentId))
-                .setText("Payment ID: " + (paymentId.isEmpty() ? "--" : paymentId));
+                .setText(paymentId.isEmpty() ? "--" : paymentId);
         ((TextView) findViewById(R.id.tvPaymentSuccessPaymentStatus))
-                .setText("Trạng thái thanh toán: " + (paymentStatus.isEmpty() ? "--" : paymentStatus));
+                .setText(paymentStatus.isEmpty() ? "--" : paymentStatus);
         ((TextView) findViewById(R.id.tvPaymentSuccessMomoTransId))
-                .setText("Momo trans ID: " + (momoTransId.isEmpty() ? "--" : momoTransId));
+                .setText(momoTransId.isEmpty() ? "--" : momoTransId);
         ((TextView) findViewById(R.id.tvPaymentSuccessResultCode))
-                .setText("Result code: " + resultCode);
+                .setText(String.valueOf(resultCode));
         ((TextView) findViewById(R.id.tvPaymentSuccessResultMessage))
-                .setText("Result message: " + (resultMessage.isEmpty() ? "--" : resultMessage));
+                .setText(resultMessage.isEmpty() ? "--" : resultMessage);
 
         findViewById(R.id.btnBackHomeAfterPayment).setOnClickListener(v -> {
             Intent homeIntent = new Intent(this, MainActivity.class);
