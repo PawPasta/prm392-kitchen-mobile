@@ -5,11 +5,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.checkbox.MaterialCheckBox;
+import com.google.android.material.card.MaterialCardView;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -138,6 +141,7 @@ public class ItemGroupAdapter extends RecyclerView.Adapter<ItemGroupAdapter.Item
         private TextView tvItemName;
         private TextView tvPrice;
         private MaterialCheckBox cbSelect;
+        private MaterialCardView cardItem;
 
         public ItemViewHolder(@NonNull View itemView, boolean isHeader) {
             super(itemView);
@@ -148,6 +152,7 @@ public class ItemGroupAdapter extends RecyclerView.Adapter<ItemGroupAdapter.Item
                 tvItemName = itemView.findViewById(R.id.tvItemName);
                 tvPrice = itemView.findViewById(R.id.tvItemPrice);
                 cbSelect = itemView.findViewById(R.id.cbSelectItem);
+                cardItem = itemView.findViewById(R.id.cardSelectableItem);
             }
         }
 
@@ -169,6 +174,75 @@ public class ItemGroupAdapter extends RecyclerView.Adapter<ItemGroupAdapter.Item
                 cbSelect.setChecked(isSelected);
                 cbSelect.setOnCheckedChangeListener(listener);
             }
+            if (cardItem != null) {
+                int strokeColor = ContextCompat.getColor(itemView.getContext(),
+                        isSelected ? getStepColorRes(item) : R.color.cardStroke);
+                int strokeWidth = dpToPx(itemView, isSelected ? 2 : 1);
+                cardItem.setStrokeColor(strokeColor);
+                cardItem.setStrokeWidth(strokeWidth);
+            }
+
+            itemView.setOnClickListener(v -> {
+                int position = getBindingAdapterPosition();
+                if (position == RecyclerView.NO_POSITION || cbSelect == null) {
+                    return;
+                }
+                boolean nextSelected = !cbSelect.isChecked();
+                cbSelect.setOnCheckedChangeListener(null);
+                cbSelect.setChecked(nextSelected);
+                updateCardSelectionState(item, nextSelected);
+                listener.onCheckedChanged(cbSelect, nextSelected);
+                cbSelect.setOnCheckedChangeListener(listener);
+            });
+        }
+
+        private int dpToPx(View view, int dp) {
+            float density = view.getResources().getDisplayMetrics().density;
+            return Math.round(dp * density);
+        }
+
+        private void updateCardSelectionState(ItemResponse item, boolean selected) {
+            if (cardItem == null) {
+                return;
+            }
+            int strokeColor = ContextCompat.getColor(itemView.getContext(),
+                    selected ? getStepColorRes(item) : R.color.cardStroke);
+            int strokeWidth = dpToPx(itemView, selected ? 2 : 1);
+            cardItem.setStrokeColor(strokeColor);
+            cardItem.setStrokeWidth(strokeWidth);
+        }
+
+        private int getStepColorRes(ItemResponse item) {
+            String stepName = item != null ? item.getStepName() : null;
+            if (stepName == null) {
+                return R.color.stepDefault;
+            }
+            String lower = normalize(stepName).toLowerCase(java.util.Locale.ROOT);
+            if (lower.contains("vegetable") || lower.contains("rau")) {
+                return R.color.stepVeggie;
+            }
+            if (lower.contains("protein") || lower.contains("thit") || lower.contains("meat")
+                    || lower.contains("seafood") || lower.contains("hai san")) {
+                return R.color.stepProtein;
+            }
+            if (lower.contains("carb") || lower.contains("com")
+                    || lower.contains("bun") || lower.contains("noodle")
+                    || lower.contains("banh")) {
+                return R.color.stepCarb;
+            }
+            if (lower.contains("sauce") || lower.contains("sot")) {
+                return R.color.stepSauce;
+            }
+            if (lower.contains("dairy") || lower.contains("milk") || lower.contains("sua")
+                    || lower.contains("cheese")) {
+                return R.color.stepDairy;
+            }
+            return R.color.stepDefault;
+        }
+
+        private String normalize(String text) {
+            String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
+            return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         }
     }
 }

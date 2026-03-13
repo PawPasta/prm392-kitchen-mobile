@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
@@ -101,6 +102,7 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         // Tạm bỏ listener để tránh trigger khi set checked bằng code
         holder.cbSelect.setOnCheckedChangeListener(null);
         holder.cbSelect.setChecked(isSelected);
+        updateCardSelectionState(holder, isSelected, stepColor);
 
         // Show/hide quantity and note fields based on selection
         holder.layoutItemOptions.setVisibility(isSelected ? View.VISIBLE : View.GONE);
@@ -111,21 +113,22 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         }
 
         // Handle checkbox change — chỉ cho phép nếu item ENABLE
-        holder.cbSelect.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (!isEnabled) return;
-            if (isChecked) {
-                double defaultQty = getDefaultQuantity(item);
-                selectedQuantities.put(item.getItemId(), defaultQty);
-                selectedNotes.put(item.getItemId(), "");
-                holder.layoutItemOptions.setVisibility(View.VISIBLE);
-                holder.tvQuantity.setText(formatQuantity(defaultQty));
-                holder.etNote.setText("");
-            } else {
-                selectedQuantities.remove(item.getItemId());
-                selectedNotes.remove(item.getItemId());
-                holder.layoutItemOptions.setVisibility(View.GONE);
+        android.widget.CompoundButton.OnCheckedChangeListener selectionListener =
+                (buttonView, isChecked) -> {
+                    if (!isEnabled) return;
+                    setItemSelected(holder, item, isChecked);
+                };
+        holder.cbSelect.setOnCheckedChangeListener(selectionListener);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (!isEnabled) {
+                return;
             }
-            notifySelectionChanged();
+            boolean nextSelected = !selectedQuantities.containsKey(item.getItemId());
+            holder.cbSelect.setOnCheckedChangeListener(null);
+            holder.cbSelect.setChecked(nextSelected);
+            holder.cbSelect.setOnCheckedChangeListener(selectionListener);
+            setItemSelected(holder, item, nextSelected);
         });
 
         // Handle quantity change (step = 50)
@@ -217,7 +220,52 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
         return String.format(Locale.US, "%.1f", quantity);
     }
 
+    private void updateCardSelectionState(SelectableItemViewHolder holder, boolean selected, int stepColor) {
+        if (holder.cardItem == null) {
+            return;
+        }
+        int strokeColor = selected
+                ? stepColor
+                : ContextCompat.getColor(holder.itemView.getContext(), R.color.cardStroke);
+        int strokeWidth = dpToPx(holder.itemView, selected ? 2 : 1);
+        holder.cardItem.setStrokeColor(strokeColor);
+        holder.cardItem.setStrokeWidth(strokeWidth);
+    }
+
+    private int dpToPx(View view, int dp) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
+    private void setItemSelected(SelectableItemViewHolder holder, ItemResponse item, boolean isSelected) {
+        int stepColor = resolveStepColor(holder, item);
+        if (isSelected) {
+            double defaultQty = getDefaultQuantity(item);
+            selectedQuantities.put(item.getItemId(), defaultQty);
+            selectedNotes.put(item.getItemId(), "");
+            holder.layoutItemOptions.setVisibility(View.VISIBLE);
+            holder.tvQuantity.setText(formatQuantity(defaultQty));
+            holder.etNote.setText("");
+            updateCardSelectionState(holder, true, stepColor);
+        } else {
+            selectedQuantities.remove(item.getItemId());
+            selectedNotes.remove(item.getItemId());
+            holder.layoutItemOptions.setVisibility(View.GONE);
+            updateCardSelectionState(holder, false, stepColor);
+        }
+        notifySelectionChanged();
+    }
+
+    private int resolveStepColor(SelectableItemViewHolder holder, ItemResponse item) {
+        String stepName = item != null ? item.getStepName() : null;
+        if (stepName == null || stepName.trim().isEmpty()) {
+            stepName = "Khac";
+        }
+        return ContextCompat.getColor(holder.itemView.getContext(), getStepColorRes(stepName));
+    }
+
     static class SelectableItemViewHolder extends RecyclerView.ViewHolder {
+        MaterialCardView cardItem;
         CheckBox cbSelect;
         ImageView ivItemImage;
         View viewAccent;
@@ -229,6 +277,7 @@ public class SelectableItemAdapter extends RecyclerView.Adapter<SelectableItemAd
 
         SelectableItemViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardItem = itemView.findViewById(R.id.cardSelectableItem);
             cbSelect = itemView.findViewById(R.id.cbSelectItem);
             ivItemImage = itemView.findViewById(R.id.ivItemImage);
             viewAccent = itemView.findViewById(R.id.viewItemAccent);
