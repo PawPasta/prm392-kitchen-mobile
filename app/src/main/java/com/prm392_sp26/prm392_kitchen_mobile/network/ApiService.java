@@ -102,6 +102,11 @@ public interface ApiService {
     Call<BaseResponse<OrderResponse>> getCurrentOrder(
             @Header("Authorization") String authHeader);
 
+    @GET("api/orders/{orderId}")
+    Call<BaseResponse<OrderResponse>> getOrderById(
+            @Header("Authorization") String authHeader,
+            @Path("orderId") String orderId);
+
     /**
      * Refresh access token khi hết hạn
      * POST /api/auth/refresh-token

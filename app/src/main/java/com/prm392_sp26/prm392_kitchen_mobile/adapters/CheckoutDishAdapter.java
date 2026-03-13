@@ -58,7 +58,8 @@ public class CheckoutDishAdapter extends RecyclerView.Adapter<CheckoutDishAdapte
 
         holder.tvDishName.setText(nonEmpty(dish.getDishName(), "Món ăn"));
         holder.tvDishMeta.setText("SL: " + Math.max(1, dish.getQuantity())
-                + " • " + formatNumber(dish.getDishCalories()) + " kcal");
+                + " • " + formatNumber(dish.getDishCalories()) + " kcal"
+                + " • Đơn giá: " + CurrencyFormatter.formatVnd(dish.getDishPrice()));
         holder.tvLineTotal.setText(CurrencyFormatter.formatVnd(dish.getLineTotal()));
 
         String imageUrl = PlaceholderImageResolver.resolveDishImageUrl(dish.getDishImageUrl());
@@ -212,7 +213,7 @@ public class CheckoutDishAdapter extends RecyclerView.Adapter<CheckoutDishAdapte
         TextView tvComponentPrice = rowView.findViewById(R.id.tvComponentPrice);
 
         tvComponentName.setText(nonEmpty(component.getItemName(), "Thành phần"));
-        tvComponentQty.setText(buildQuantityText(component.getQuantity(), component.getUnit()));
+        tvComponentQty.setText(buildComponentMeta(component));
         tvComponentPrice.setText(CurrencyFormatter.formatVnd(component.getPrice()));
 
         String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(
@@ -234,6 +235,22 @@ public class CheckoutDishAdapter extends RecyclerView.Adapter<CheckoutDishAdapte
             text += " " + unit.trim();
         }
         return text;
+    }
+
+    private String buildComponentMeta(OrderResponse.OrderDishItemDetail component) {
+        if (component == null) {
+            return "--";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildQuantityText(component.getQuantity(), component.getUnit()));
+        if (component.getCalories() > 0) {
+            builder.append(" • ").append(formatNumber(component.getCalories())).append(" kcal");
+        }
+        String note = component.getNote();
+        if (!TextUtils.isEmpty(note)) {
+            builder.append(" • ").append(note.trim());
+        }
+        return builder.toString();
     }
 
     private int dp(Context context, int value) {

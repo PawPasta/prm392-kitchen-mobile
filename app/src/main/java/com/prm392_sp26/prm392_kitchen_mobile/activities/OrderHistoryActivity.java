@@ -257,7 +257,8 @@ public class OrderHistoryActivity extends AppCompatActivity {
     private void openOrderDetail(OrderHistoryResponse.OrderItem item) {
         String json = new Gson().toJson(item);
         android.content.Intent intent = new android.content.Intent(this, OrderDetailActivity.class);
-        intent.putExtra("order_json", json);
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_ID, item.getOrderId());
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_JSON, json);
         startActivity(intent);
     }
 

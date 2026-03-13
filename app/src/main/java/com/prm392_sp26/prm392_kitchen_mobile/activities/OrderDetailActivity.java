@@ -16,12 +16,16 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.Gson;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
+import com.prm392_sp26.prm392_kitchen_mobile.adapters.CheckoutDishAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.CancelOrderRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderResponse;
@@ -34,22 +38,35 @@ import com.prm392_sp26.prm392_kitchen_mobile.util.StatusColorUtil;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class OrderDetailActivity extends AppCompatActivity {
+
+    public static final String EXTRA_ORDER_ID = "extra_order_id";
+    public static final String EXTRA_ORDER_JSON = "order_json";
 
     private TextView tvOrderId;
     private TextView tvStatus;
+    private TextView tvUserId;
     private TextView tvCreatedAt;
     private TextView tvPickupAt;
-    private TextView tvTotal;
+    private TextView tvTotalPrice;
+    private TextView tvDiscount;
+    private TextView tvFinalAmount;
     private TextView tvNote;
+    private TextView tvDishesEmpty;
     private LinearLayout timelineContainer;
-    private LinearLayout dishesContainer;
+    private RecyclerView rvDishes;
     private Button btnCancelOrder;
     private ProgressBar progressCancelOrder;
+    private ProgressBar progressOrderDetail;
+
+    private CheckoutDishAdapter dishAdapter;
     private String currentOrderId;
 
     @Override
@@ -64,77 +81,146 @@ public class OrderDetailActivity extends AppCompatActivity {
             return insets;
         });
 
-        tvOrderId = findViewById(R.id.tvOrderDetailId);
-        tvStatus = findViewById(R.id.tvOrderDetailStatus);
-        tvCreatedAt = findViewById(R.id.tvOrderDetailCreatedAt);
-        tvPickupAt = findViewById(R.id.tvOrderDetailPickupAt);
-        tvTotal = findViewById(R.id.tvOrderDetailTotal);
-        tvNote = findViewById(R.id.tvOrderDetailNote);
-        timelineContainer = findViewById(R.id.timelineContainer);
-        dishesContainer = findViewById(R.id.dishesContainer);
-        btnCancelOrder = findViewById(R.id.btnCancelOrder);
-        progressCancelOrder = findViewById(R.id.progressCancelOrder);
+        bindViews();
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         btnCancelOrder.setOnClickListener(v -> confirmCancel());
 
-        String json = getIntent().getStringExtra("order_json");
-        if (json == null || json.trim().isEmpty()) {
-            Toast.makeText(this, "Không có dữ liệu đơn hàng.", Toast.LENGTH_LONG).show();
+        String orderId = resolveOrderId();
+        if (orderId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy mã đơn hàng", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
 
-        OrderHistoryResponse.OrderItem order = new Gson().fromJson(json, OrderHistoryResponse.OrderItem.class);
-        bindOrder(order);
+        currentOrderId = orderId;
+        loadOrderDetail(orderId);
     }
 
-    private void bindOrder(OrderHistoryResponse.OrderItem order) {
+    private void bindViews() {
+        tvOrderId = findViewById(R.id.tvOrderDetailId);
+        tvStatus = findViewById(R.id.tvOrderDetailStatus);
+        tvUserId = findViewById(R.id.tvOrderDetailUserId);
+        tvCreatedAt = findViewById(R.id.tvOrderDetailCreatedAt);
+        tvPickupAt = findViewById(R.id.tvOrderDetailPickupAt);
+        tvTotalPrice = findViewById(R.id.tvOrderDetailTotalPrice);
+        tvDiscount = findViewById(R.id.tvOrderDetailDiscount);
+        tvFinalAmount = findViewById(R.id.tvOrderDetailFinalAmount);
+        tvNote = findViewById(R.id.tvOrderDetailNote);
+        tvDishesEmpty = findViewById(R.id.tvOrderDetailDishesEmpty);
+        timelineContainer = findViewById(R.id.timelineContainer);
+        rvDishes = findViewById(R.id.rvOrderDetailDishes);
+        btnCancelOrder = findViewById(R.id.btnCancelOrder);
+        progressCancelOrder = findViewById(R.id.progressCancelOrder);
+        progressOrderDetail = findViewById(R.id.progressOrderDetail);
+
+        dishAdapter = new CheckoutDishAdapter();
+        rvDishes.setLayoutManager(new LinearLayoutManager(this));
+        rvDishes.setAdapter(dishAdapter);
+    }
+
+    private String resolveOrderId() {
+        String orderId = safeText(getIntent().getStringExtra(EXTRA_ORDER_ID));
+        if (!orderId.isEmpty()) {
+            return orderId;
+        }
+
+        String json = getIntent().getStringExtra(EXTRA_ORDER_JSON);
+        if (json == null || json.trim().isEmpty()) {
+            return "";
+        }
+        try {
+            OrderHistoryResponse.OrderItem order = new Gson().fromJson(json, OrderHistoryResponse.OrderItem.class);
+            return order != null && order.getOrderId() != null ? order.getOrderId().trim() : "";
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    private void loadOrderDetail(String orderId) {
+        String token = PrefsManager.getInstance(this).getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Vui lòng đăng nhập lại", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        setOrderLoading(true);
+        ApiClient.getInstance()
+                .getApiService()
+                .getOrderById("Bearer " + token, orderId)
+                .enqueue(new Callback<BaseResponse<OrderResponse>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<BaseResponse<OrderResponse>> call,
+                                           @NonNull Response<BaseResponse<OrderResponse>> response) {
+                        setOrderLoading(false);
+
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().isSuccess()
+                                && response.body().getData() != null) {
+                            bindOrder(response.body().getData());
+                            return;
+                        }
+
+                        String message = "Không tải được chi tiết đơn hàng";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            message = response.body().getMessage();
+                        }
+                        Toast.makeText(OrderDetailActivity.this, message, Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<BaseResponse<OrderResponse>> call,
+                                          @NonNull Throwable t) {
+                        setOrderLoading(false);
+                        Toast.makeText(OrderDetailActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void bindOrder(OrderResponse order) {
         if (order == null) {
             return;
         }
 
-        String orderId = order.getOrderId() == null ? "" : order.getOrderId();
-        currentOrderId = orderId;
-        tvOrderId.setText("Order #" + shortId(orderId));
+        currentOrderId = safeText(order.getOrderId());
+        tvOrderId.setText("Order #" + shortId(currentOrderId));
 
-        String status = order.getStatus() == null ? "" : order.getStatus();
-        tvStatus.setText(status);
-        tvStatus.setTextColor(getColor(StatusColorUtil.getStatusColorRes(status)));
+        String status = safeText(order.getStatus());
+        tvStatus.setText(status.isEmpty() ? "--" : status);
+        int statusColor = ContextCompat.getColor(this, StatusColorUtil.getStatusColorRes(status));
+        tvStatus.setTextColor(statusColor);
 
-        // Chỉ hiện nút Hủy đơn khi đơn đang ở trạng thái CREATED
-        if ("CREATED".equalsIgnoreCase(status)) {
-            btnCancelOrder.setVisibility(View.VISIBLE);
-        } else {
-            btnCancelOrder.setVisibility(View.GONE);
-        }
-
+        tvUserId.setText("User ID: " + fallback(order.getUserId(), "--"));
         tvCreatedAt.setText("Ngày tạo: " + formatDateTime(order.getCreatedAt()));
-        String pickup = order.getPickupAt();
-        if (pickup == null || pickup.trim().isEmpty()) {
+
+        String pickup = safeText(order.getPickupAt());
+        if (pickup.isEmpty()) {
             tvPickupAt.setVisibility(View.GONE);
         } else {
             tvPickupAt.setVisibility(View.VISIBLE);
             tvPickupAt.setText("Nhận: " + formatDateTime(pickup));
         }
 
-        double amount = order.getFinalAmount() > 0 ? order.getFinalAmount() : order.getTotalPrice();
-        tvTotal.setText("Tổng: " + formatCurrency(amount));
+        tvTotalPrice.setText(formatCurrency(order.getTotalPrice()));
+        tvDiscount.setText("-" + formatCurrency(order.getDiscountAmount()));
+        tvFinalAmount.setText(formatCurrency(order.getFinalAmount()));
 
-        String note = order.getNote();
-        if (note == null || note.trim().isEmpty()) {
-            tvNote.setText("Ghi chú: --");
-        } else {
-            tvNote.setText("Ghi chú: " + note);
-        }
+        String note = safeText(order.getNote());
+        tvNote.setText("Ghi chú: " + (note.isEmpty() ? "--" : note));
 
-        renderTimeline(order.getStatus());
-        renderDishes(order.getDishes());
+        renderTimeline(status);
+        renderDishes(order);
+
+        btnCancelOrder.setVisibility(canCancelOrder(status) ? View.VISIBLE : View.GONE);
     }
 
     private void renderTimeline(String currentStatus) {
         timelineContainer.removeAllViews();
-        String[] statuses = new String[] { "CONFIRMED", "PROCESSING", "READY", "COMPLETED", "CANCELLED" };
+        String[] statuses = new String[] { "CREATED", "CONFIRMED", "PROCESSING", "READY", "COMPLETED", "CANCELLED" };
         for (String status : statuses) {
             TextView chip = new TextView(this);
             chip.setText(status);
@@ -145,76 +231,38 @@ public class OrderDetailActivity extends AppCompatActivity {
                     LinearLayout.LayoutParams.WRAP_CONTENT);
             params.setMarginEnd(dp(6));
             chip.setLayoutParams(params);
+
             boolean isActive = status.equalsIgnoreCase(currentStatus);
             if (isActive) {
-                int statusColor = getColor(StatusColorUtil.getStatusBackgroundColorRes(status));
+                int chipColor = ContextCompat.getColor(this, StatusColorUtil.getStatusBackgroundColorRes(status));
                 chip.setBackgroundResource(R.drawable.bg_status_chip_active);
                 if (chip.getBackground() != null) {
-                    chip.getBackground().setTint(statusColor);
+                    chip.getBackground().setTint(chipColor);
                 }
-                chip.setTextColor(getColor(R.color.white));
+                chip.setTextColor(ContextCompat.getColor(this, R.color.white));
             } else {
                 chip.setBackgroundResource(R.drawable.bg_status_chip_inactive);
-                chip.setTextColor(getColor(R.color.colorTextPrimary));
+                chip.setTextColor(ContextCompat.getColor(this, R.color.colorTextPrimary));
             }
             timelineContainer.addView(chip);
         }
     }
 
-    private void renderDishes(List<OrderHistoryResponse.OrderDish> dishes) {
-        dishesContainer.removeAllViews();
-        if (dishes == null || dishes.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText("Không có món.");
-            empty.setTextColor(getResources().getColor(R.color.colorTextSecondary));
-            dishesContainer.addView(empty);
+    private void renderDishes(OrderResponse order) {
+        if (order == null || order.getDishes() == null || order.getDishes().isEmpty()) {
+            dishAdapter.setItems(null);
+            rvDishes.setVisibility(View.GONE);
+            tvDishesEmpty.setVisibility(View.VISIBLE);
             return;
         }
 
-        for (OrderHistoryResponse.OrderDish dish : dishes) {
-            if (dish == null) {
-                continue;
-            }
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setPadding(0, dp(4), 0, dp(4));
+        tvDishesEmpty.setVisibility(View.GONE);
+        rvDishes.setVisibility(View.VISIBLE);
+        dishAdapter.setItems(order.getDishes());
+    }
 
-            ImageView ivDish = new ImageView(this);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(24), dp(24));
-            iconParams.setMarginEnd(dp(8));
-            ivDish.setLayoutParams(iconParams);
-            ivDish.setImageResource(R.drawable.ic_dish);
-            ivDish.setColorFilter(getResources().getColor(R.color.colorTextPrimary));
-
-            TextView tvDish = new TextView(this);
-            String name = dish.getDishName() == null ? "" : dish.getDishName();
-            tvDish.setText(name + " x" + dish.getQuantity() + " - " + formatCurrency(dish.getLineTotal()));
-            tvDish.setTextColor(getResources().getColor(R.color.colorTextPrimary));
-            tvDish.setTextSize(13f);
-
-            row.addView(ivDish);
-            row.addView(tvDish);
-            dishesContainer.addView(row);
-
-            List<OrderHistoryResponse.OrderDishItem> customItems = dish.getCustomItems();
-            if (customItems == null) {
-                continue;
-            }
-            for (OrderHistoryResponse.OrderDishItem item : customItems) {
-                if (item == null) {
-                    continue;
-                }
-                TextView tvItem = new TextView(this);
-                String itemName = item.getItemName() == null ? "" : item.getItemName();
-                String unit = item.getUnit() == null ? "" : item.getUnit();
-                tvItem.setText("- " + itemName + " x" + item.getQuantity() + unit + " ("
-                        + formatCurrency(item.getPrice()) + ")");
-                tvItem.setTextColor(getResources().getColor(R.color.colorTextSecondary));
-                tvItem.setTextSize(12f);
-                tvItem.setPadding(dp(12), dp(2), 0, dp(2));
-                dishesContainer.addView(tvItem);
-            }
-        }
+    private boolean canCancelOrder(String status) {
+        return "CREATED".equalsIgnoreCase(safeText(status));
     }
 
     private void confirmCancel() {
@@ -261,37 +309,40 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         ApiClient.getInstance().getApiService()
                 .cancelOrder("Bearer " + token, currentOrderId, new CancelOrderRequest(reason))
-                .enqueue(new retrofit2.Callback<BaseResponse<OrderResponse>>() {
+                .enqueue(new Callback<BaseResponse<OrderResponse>>() {
                     @Override
-                    public void onResponse(@NonNull retrofit2.Call<BaseResponse<OrderResponse>> call,
-                                           @NonNull retrofit2.Response<BaseResponse<OrderResponse>> response) {
+                    public void onResponse(@NonNull Call<BaseResponse<OrderResponse>> call,
+                                           @NonNull Response<BaseResponse<OrderResponse>> response) {
                         progressCancelOrder.setVisibility(View.GONE);
                         btnCancelOrder.setEnabled(true);
 
                         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                             Toast.makeText(OrderDetailActivity.this, "Đã hủy đơn hàng", Toast.LENGTH_SHORT).show();
-                            btnCancelOrder.setVisibility(View.GONE);
-                            tvStatus.setText("CANCELLED");
-                            tvStatus.setTextColor(getColor(StatusColorUtil.getStatusColorRes("CANCELLED")));
-                        } else {
-                            String msg = "Hủy đơn thất bại";
-                            if (response.body() != null && response.body().getMessage() != null) {
-                                msg = response.body().getMessage();
-                            } else if (response.errorBody() != null) {
-                                try { msg = response.errorBody().string(); } catch (Exception ignored) {}
-                            }
-                            Toast.makeText(OrderDetailActivity.this, msg, Toast.LENGTH_LONG).show();
+                            loadOrderDetail(currentOrderId);
+                            return;
                         }
+
+                        String msg = "Hủy đơn thất bại";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            msg = response.body().getMessage();
+                        }
+                        Toast.makeText(OrderDetailActivity.this, msg, Toast.LENGTH_LONG).show();
                     }
 
                     @Override
-                    public void onFailure(@NonNull retrofit2.Call<BaseResponse<OrderResponse>> call,
+                    public void onFailure(@NonNull Call<BaseResponse<OrderResponse>> call,
                                           @NonNull Throwable t) {
                         progressCancelOrder.setVisibility(View.GONE);
                         btnCancelOrder.setEnabled(true);
-                        Toast.makeText(OrderDetailActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(OrderDetailActivity.this,
+                                "Lỗi kết nối: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void setOrderLoading(boolean loading) {
+        progressOrderDetail.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
     private int dp(int value) {
@@ -342,5 +393,17 @@ public class OrderDetailActivity extends AppCompatActivity {
             }
         }
         return null;
+    }
+
+    private String safeText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
+    }
+
+    private String fallback(String value, String fallbackValue) {
+        String normalized = safeText(value);
+        return normalized.isEmpty() ? fallbackValue : normalized;
     }
 }

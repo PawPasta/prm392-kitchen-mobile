@@ -285,7 +285,9 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
         if (status == null) {
             return true;
         }
-        return !"COMPLETED".equalsIgnoreCase(status.trim());
+        String normalized = status.trim();
+        return !"COMPLETED".equalsIgnoreCase(normalized)
+                && !"CANCELLED".equalsIgnoreCase(normalized);
     }
 
     public interface OnItemClickListener {

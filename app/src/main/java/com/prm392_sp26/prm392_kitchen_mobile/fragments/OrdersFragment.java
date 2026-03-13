@@ -262,7 +262,8 @@ public class OrdersFragment extends Fragment {
     private void openOrderDetail(OrderHistoryResponse.OrderItem item) {
         String json = new Gson().toJson(item);
         Intent intent = new Intent(requireActivity(), OrderDetailActivity.class);
-        intent.putExtra("order_json", json);
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_ID, item.getOrderId());
+        intent.putExtra(OrderDetailActivity.EXTRA_ORDER_JSON, json);
         startActivity(intent);
     }
 
