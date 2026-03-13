@@ -79,6 +79,7 @@ public class HomeFragment extends Fragment {
         homeScroll = view.findViewById(R.id.homeScroll);
         bannerPager = view.findViewById(R.id.bannerPager);
         bannerIndicators = view.findViewById(R.id.bannerIndicators);
+        View searchBar = view.findViewById(R.id.layoutHomeSearchBar);
 
         // Setup Layout
         rvDishes.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -91,6 +92,7 @@ public class HomeFragment extends Fragment {
 
         // Logic
         displayUserInfo();
+        setupSearchNavigation(searchBar);
         setupCategoryNavigation(view);
 
         setupBanner();
@@ -122,6 +124,13 @@ public class HomeFragment extends Fragment {
         bindCategoryClick(root, R.id.categoryVegetables, 3, "Vegetables");
         bindCategoryClick(root, R.id.categorySauce, 4, "Sauce");
         bindCategoryClick(root, R.id.categoryExtra, 5, "Extra");
+    }
+
+    private void setupSearchNavigation(@Nullable View searchBar) {
+        if (searchBar == null) {
+            return;
+        }
+        searchBar.setOnClickListener(v -> openStepItems(1, "Carb"));
     }
 
     private void bindCategoryClick(@NonNull View root, int viewId, int stepId, @NonNull String stepName) {
