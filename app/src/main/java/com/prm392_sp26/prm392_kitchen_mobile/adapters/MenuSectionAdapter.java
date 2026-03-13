@@ -191,6 +191,8 @@ public class MenuSectionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             ivDishImage.setVisibility(View.VISIBLE);
             Glide.with(itemView)
                 .load(imageUrl)
+                .placeholder(R.drawable.ic_dish)
+                .error(R.drawable.ic_dish)
                 .centerCrop()
                 .into(ivDishImage);
 

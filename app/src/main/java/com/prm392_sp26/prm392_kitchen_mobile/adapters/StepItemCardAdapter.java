@@ -71,6 +71,8 @@ public class StepItemCardAdapter extends RecyclerView.Adapter<StepItemCardAdapte
         holder.ivImage.setVisibility(View.VISIBLE);
         Glide.with(holder.itemView)
                 .load(imageUrl)
+                .placeholder(R.drawable.ic_dish)
+                .error(R.drawable.ic_dish)
                 .centerCrop()
                 .into(holder.ivImage);
 

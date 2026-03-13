@@ -63,6 +63,8 @@ public class DishAdapter extends RecyclerView.Adapter<DishAdapter.DishViewHolder
         holder.ivDishImage.setVisibility(View.VISIBLE);
         Glide.with(holder.itemView)
             .load(imageUrl)
+            .placeholder(R.drawable.ic_dish)
+            .error(R.drawable.ic_dish)
             .centerCrop()
             .into(holder.ivDishImage);
         // Click vào món → gọi listener

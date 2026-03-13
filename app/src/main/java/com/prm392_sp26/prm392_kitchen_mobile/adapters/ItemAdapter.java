@@ -44,6 +44,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         String imageUrl = PlaceholderImageResolver.resolveItemImageUrl(item);
         Glide.with(holder.itemView)
             .load(imageUrl)
+            .placeholder(R.drawable.ic_dish)
+            .error(R.drawable.ic_dish)
             .centerCrop()
             .into(holder.ivItemImage);
     }
