@@ -2,8 +2,10 @@ package com.prm392_sp26.prm392_kitchen_mobile.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,13 +16,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
-import com.prm392_sp26.prm392_kitchen_mobile.adapters.ItemNutrientAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
@@ -28,7 +27,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.util.CurrencyFormatter;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PlaceholderImageResolver;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import retrofit2.Call;
@@ -49,9 +48,9 @@ public class ItemDetailActivity extends AppCompatActivity {
     private TextView tvQuantity;
     private TextView tvCalories;
     private TextView tvNote;
+    private LinearLayout layoutNutrientsContainer;
     private TextView tvNutrientsEmpty;
     private MaterialButton btnCreateCustom;
-    private ItemNutrientAdapter nutrientAdapter;
     private int itemId;
 
     @Override
@@ -92,13 +91,9 @@ public class ItemDetailActivity extends AppCompatActivity {
         tvQuantity = findViewById(R.id.tvItemDetailQuantity);
         tvCalories = findViewById(R.id.tvItemDetailCalories);
         tvNote = findViewById(R.id.tvItemDetailNote);
+        layoutNutrientsContainer = findViewById(R.id.layoutItemNutrientsContainer);
         tvNutrientsEmpty = findViewById(R.id.tvItemNutrientsEmpty);
         btnCreateCustom = findViewById(R.id.btnCreateCustomFromItem);
-
-        RecyclerView rvNutrients = findViewById(R.id.rvItemNutrients);
-        nutrientAdapter = new ItemNutrientAdapter();
-        rvNutrients.setLayoutManager(new LinearLayoutManager(this));
-        rvNutrients.setAdapter(nutrientAdapter);
 
         findViewById(R.id.btnBackItemDetail).setOnClickListener(v -> finish());
         btnCreateCustom.setOnClickListener(v ->
@@ -177,13 +172,7 @@ public class ItemDetailActivity extends AppCompatActivity {
                 .centerCrop()
                 .into(ivImage);
 
-        if (item.getNutrients() == null || item.getNutrients().isEmpty()) {
-            nutrientAdapter.setItems(new ArrayList<>());
-            tvNutrientsEmpty.setVisibility(View.VISIBLE);
-        } else {
-            nutrientAdapter.setItems(item.getNutrients());
-            tvNutrientsEmpty.setVisibility(View.GONE);
-        }
+        renderNutrients(item.getNutrients());
     }
 
     private void setLoading(boolean loading) {
@@ -202,5 +191,39 @@ public class ItemDetailActivity extends AppCompatActivity {
             return String.format(Locale.getDefault(), "%d", (long) Math.rint(value));
         }
         return String.format(Locale.getDefault(), "%.2f", value);
+    }
+
+    private void renderNutrients(List<ItemDetailResponse.ItemNutrient> nutrients) {
+        if (layoutNutrientsContainer == null) {
+            return;
+        }
+        layoutNutrientsContainer.removeAllViews();
+        if (nutrients == null || nutrients.isEmpty()) {
+            tvNutrientsEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (ItemDetailResponse.ItemNutrient nutrient : nutrients) {
+            if (nutrient == null) {
+                continue;
+            }
+            View rowView = inflater.inflate(R.layout.item_nutrient, layoutNutrientsContainer, false);
+            TextView tvNutrientName = rowView.findViewById(R.id.tvNutrientName);
+            TextView tvNutrientDescription = rowView.findViewById(R.id.tvNutrientDescription);
+            TextView tvNutrientAmount = rowView.findViewById(R.id.tvNutrientAmount);
+            TextView tvNutrientBase = rowView.findViewById(R.id.tvNutrientBase);
+
+            tvNutrientName.setText(nonEmpty(nutrient.getNutrientName(), "Nutrient"));
+            tvNutrientDescription.setText(nonEmpty(nutrient.getNutrientDescription(), "--"));
+            tvNutrientAmount.setText(formatNumber(nutrient.getAmount()) + " "
+                    + nonEmpty(nutrient.getNutrientUnit(), ""));
+            tvNutrientBase.setText("Cho " + formatNumber(nutrient.getItemBaseQuantity())
+                    + " " + nonEmpty(nutrient.getItemBaseUnit(), ""));
+
+            layoutNutrientsContainer.addView(rowView);
+        }
+
+        tvNutrientsEmpty.setVisibility(layoutNutrientsContainer.getChildCount() == 0 ? View.VISIBLE : View.GONE);
     }
 }
