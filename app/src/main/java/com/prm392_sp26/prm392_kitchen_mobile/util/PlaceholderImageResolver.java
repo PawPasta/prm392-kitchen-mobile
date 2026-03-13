@@ -7,18 +7,18 @@ import java.util.Locale;
 public final class PlaceholderImageResolver {
 
     private static final String DISH_FALLBACK_URL =
-            "https://placehold.co/1200x800/FFE7D6/E55A2B?text=Dish";
+            "https://placehold.co/1200x800/FFE7D6/E55A2B.png?text=Dish";
 
     private static final String ITEM_CARB_FALLBACK_URL =
-            "https://placehold.co/1200x800/FDE68A/7C2D12?text=Carb";
+            "https://placehold.co/1200x800/FDE68A/7C2D12.png?text=Carb";
     private static final String ITEM_PROTEIN_FALLBACK_URL =
-            "https://placehold.co/1200x800/FCA5A5/7F1D1D?text=Protein";
+            "https://placehold.co/1200x800/FCA5A5/7F1D1D.png?text=Protein";
     private static final String ITEM_VEGETABLE_FALLBACK_URL =
-            "https://placehold.co/1200x800/BBF7D0/14532D?text=Vegetables";
+            "https://placehold.co/1200x800/BBF7D0/14532D.png?text=Vegetables";
     private static final String ITEM_SAUCE_FALLBACK_URL =
-            "https://placehold.co/1200x800/BFDBFE/1E3A8A?text=Sauce";
+            "https://placehold.co/1200x800/BFDBFE/1E3A8A.png?text=Sauce";
     private static final String ITEM_EXTRA_FALLBACK_URL =
-            "https://placehold.co/1200x800/E9D5FF/581C87?text=Extra";
+            "https://placehold.co/1200x800/E9D5FF/581C87.png?text=Extra";
 
     private PlaceholderImageResolver() {
     }
