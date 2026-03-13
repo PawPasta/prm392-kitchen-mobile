@@ -69,6 +69,20 @@ public class PrefsManager {
     }
 
     /**
+     * Lưu FCM token để dùng cho thông báo
+     */
+    public void saveFcmToken(String token) {
+        prefs.edit().putString(Constants.KEY_FCM_TOKEN, token).apply();
+    }
+
+    /**
+     * Lấy FCM token đã lưu
+     */
+    public String getFcmToken() {
+        return prefs.getString(Constants.KEY_FCM_TOKEN, null);
+    }
+
+    /**
      * Kiểm tra onboarding đã hoàn thành chưa
      */
     public boolean isOnboardingDone() {

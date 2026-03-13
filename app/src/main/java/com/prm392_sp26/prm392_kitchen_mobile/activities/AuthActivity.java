@@ -28,6 +28,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.prm392_sp26.prm392_kitchen_mobile.MainActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.LoginRequest;
@@ -72,6 +73,7 @@ public class AuthActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         credentialManager = CredentialManager.create(this);
         prefsManager = PrefsManager.getInstance(this);
+        fetchAndStoreFcmToken();
 
         // Bind views
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
@@ -89,6 +91,7 @@ public class AuthActivity extends AppCompatActivity {
             Toast.makeText(this, "[DEBUG] Bỏ qua đăng nhập", Toast.LENGTH_SHORT).show();
             // Lưu token giả để vào được MainActivity
             prefsManager.saveTokens("dummy_access_token", "dummy_refresh_token");
+            fetchAndStoreFcmToken();
             startActivity(new Intent(this, MainActivity.class));
             finish();
         });
@@ -233,6 +236,7 @@ public class AuthActivity extends AppCompatActivity {
                     if (baseResponse.isSuccess() && baseResponse.getData() != null) {
                         // Lưu thông tin đăng nhập
                         prefsManager.saveLoginResponse(baseResponse.getData());
+                        fetchAndStoreFcmToken();
                         Toast.makeText(AuthActivity.this,
                                 "Đăng nhập thành công! 🎉", Toast.LENGTH_SHORT).show();
 
@@ -269,6 +273,21 @@ public class AuthActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void fetchAndStoreFcmToken() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w(TAG, "Failed to fetch FCM token", task.getException());
+                        return;
+                    }
+                    String fcmToken = task.getResult();
+                    if (fcmToken == null || fcmToken.trim().isEmpty()) {
+                        return;
+                    }
+                    prefsManager.saveFcmToken(fcmToken);
+                });
     }
 
     /**
