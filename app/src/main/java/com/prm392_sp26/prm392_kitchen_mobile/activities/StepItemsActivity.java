@@ -119,7 +119,7 @@ public class StepItemsActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         dishAdapter = new DishAdapter(new ArrayList<>(), this::openDishDetail);
-        itemAdapter = new StepItemCardAdapter();
+        itemAdapter = new StepItemCardAdapter(this::openItemDetail);
         concatAdapter = new ConcatAdapter(dishAdapter, itemAdapter);
         recyclerItems.setLayoutManager(new LinearLayoutManager(this));
         recyclerItems.setAdapter(concatAdapter);
@@ -518,6 +518,15 @@ public class StepItemsActivity extends AppCompatActivity {
         }
         Intent intent = new Intent(this, DishDetailActivity.class);
         intent.putExtra("dishId", dish.getDishId());
+        startActivity(intent);
+    }
+
+    private void openItemDetail(ItemResponse item) {
+        if (item == null || item.getItemId() <= 0) {
+            return;
+        }
+        Intent intent = new Intent(this, ItemDetailActivity.class);
+        intent.putExtra(ItemDetailActivity.EXTRA_ITEM_ID, item.getItemId());
         startActivity(intent);
     }
 

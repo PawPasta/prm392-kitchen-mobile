@@ -15,6 +15,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.PaymentMethodResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.PromotionResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.SearchResponse;
@@ -189,7 +190,7 @@ public interface ApiService {
      * @return BaseResponse<ItemDetailResponse> (bao gồm nutrients)
      */
     @GET("api/items/{itemId}/detail")
-    Call<BaseResponse<ItemResponse>> getItemDetailWithNutrients(
+    Call<BaseResponse<ItemDetailResponse>> getItemDetailWithNutrients(
         @Header("Authorization") String authHeader,
         @Path("itemId") int itemId
     );

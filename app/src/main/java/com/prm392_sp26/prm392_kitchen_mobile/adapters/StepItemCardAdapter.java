@@ -21,7 +21,20 @@ import java.util.Locale;
 
 public class StepItemCardAdapter extends RecyclerView.Adapter<StepItemCardAdapter.StepItemViewHolder> {
 
+    public interface OnItemClickListener {
+        void onItemClick(ItemResponse item);
+    }
+
     private final List<ItemResponse> items = new ArrayList<>();
+    private final OnItemClickListener onItemClickListener;
+
+    public StepItemCardAdapter() {
+        this(null);
+    }
+
+    public StepItemCardAdapter(OnItemClickListener onItemClickListener) {
+        this.onItemClickListener = onItemClickListener;
+    }
 
     public void setItems(List<ItemResponse> newItems) {
         items.clear();
@@ -65,6 +78,12 @@ public class StepItemCardAdapter extends RecyclerView.Adapter<StepItemCardAdapte
                     .centerCrop()
                     .into(holder.ivImage);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            if (onItemClickListener != null) {
+                onItemClickListener.onItemClick(item);
+            }
+        });
     }
 
     @Override

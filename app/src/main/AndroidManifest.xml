@@ -87,6 +87,11 @@
             android:name=".activities.StepItemsActivity"
             android:exported="false" />
 
+        <!-- ItemDetailActivity - Item detail -->
+        <activity
+            android:name=".activities.ItemDetailActivity"
+            android:exported="false" />
+
         <!-- OrderDetailActivity - Order detail -->
         <activity
             android:name=".activities.OrderDetailActivity"
