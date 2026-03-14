@@ -29,7 +29,7 @@
                 android:contentDescription=""
                 android:padding="8dp"
                 android:src="@drawable/ic_chevron_left"
-                android:tint="@android:color/white" />
+                app:tint="@android:color/white" />
 
             <TextView
                 android:layout_width="0dp"
