@@ -6,6 +6,7 @@ import android.util.Log;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.prm392_sp26.prm392_kitchen_mobile.util.AppForegroundTracker;
+import com.prm392_sp26.prm392_kitchen_mobile.util.NotificationHelper;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 public class KitchenApplication extends Application {
@@ -23,6 +24,7 @@ public class KitchenApplication extends Application {
         instance = this;
         AppForegroundTracker.init(this);
         FirebaseApp.initializeApp(this);
+        NotificationHelper.createNotificationChannel(this);
         fetchAndStoreFcmTokenIfNeeded();
     }
 

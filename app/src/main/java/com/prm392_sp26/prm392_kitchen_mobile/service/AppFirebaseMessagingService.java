@@ -11,6 +11,7 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.prm392_sp26.prm392_kitchen_mobile.util.AppForegroundTracker;
 import com.prm392_sp26.prm392_kitchen_mobile.util.InAppMessageHelper;
+import com.prm392_sp26.prm392_kitchen_mobile.util.NotificationHelper;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
 
 import java.util.Map;
@@ -63,7 +64,7 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
                     () -> InAppMessageHelper.show(activity, finalTitle, finalBody)
             );
         } else {
-            Log.d(TAG, "App in background, skip in-app message.");
+            NotificationHelper.showNotification(getApplicationContext(), title, body, data);
         }
     }
 
