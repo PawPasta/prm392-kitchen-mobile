@@ -11,11 +11,19 @@ public class LoginRequest {
     @SerializedName("idToken")
     private String idToken;
 
+    @SerializedName("fcmToken")
+    private String fcmToken;
+
     public LoginRequest() {
     }
 
     public LoginRequest(String idToken) {
         this.idToken = idToken;
+    }
+
+    public LoginRequest(String idToken, String fcmToken) {
+        this.idToken = idToken;
+        this.fcmToken = fcmToken;
     }
 
     public String getIdToken() {
@@ -24,6 +32,14 @@ public class LoginRequest {
 
     public void setIdToken(String idToken) {
         this.idToken = idToken;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }
 

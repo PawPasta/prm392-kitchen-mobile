@@ -54,13 +54,23 @@
                         android:textSize="13sp" />
                 </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/ivNotification"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_notification"
-                    app:tint="@color/white" />
+                <FrameLayout
+                    android:id="@+id/btnNotification"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_notification_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/app_name">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_notification"
+                        app:tint="@color/white" />
+                </FrameLayout>
             </LinearLayout>
 
             <!-- SEARCH BAR -->

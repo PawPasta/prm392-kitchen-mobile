@@ -47,9 +47,8 @@ public class ProfileActivity extends AppCompatActivity {
     private View avatarContainer;
     private View itemCart;
     private View itemOrderHistory;
-    private View itemWallet;
-    private View walletBalanceContainer;
-    private TextView tvWalletBalance;
+    private TextView tvWalletAmount;
+    private View btnTopUpWallet;
     private UserProfile currentProfile;
     private boolean isEditingProfile;
 
@@ -77,18 +76,24 @@ public class ProfileActivity extends AppCompatActivity {
         avatarContainer = findViewById(R.id.avatarContainer);
         itemCart = findViewById(R.id.itemCart);
         itemOrderHistory = findViewById(R.id.itemOrderHistory);
-        itemWallet = findViewById(R.id.itemWallet);
-        walletBalanceContainer = findViewById(R.id.walletBalanceContainer);
-        tvWalletBalance = findViewById(R.id.tvWalletBalance);
+        tvWalletAmount = findViewById(R.id.tvWalletAmount);
+        btnTopUpWallet = findViewById(R.id.btnTopUpWallet);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnLogout).setOnClickListener(v -> performLogout());
         itemCart.setOnClickListener(v -> navigateToCart());
         itemOrderHistory.setOnClickListener(v -> navigateToOrderHistory());
-        itemWallet.setOnClickListener(v -> toggleWalletBalance());
         btnEditProfile.setOnClickListener(v -> toggleEditProfile());
+        btnTopUpWallet.setOnClickListener(v -> openWalletTopUp());
 
         loadProfile();
+        loadWalletBalance();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadWalletBalance();
     }
 
     private void loadProfile() {
@@ -163,6 +168,7 @@ public class ProfileActivity extends AppCompatActivity {
             etProfileName.setText(displayName);
             tvProfileName.setVisibility(View.VISIBLE);
         }
+        bindWalletAmount(profile.getWallet());
 
     }
 
@@ -187,24 +193,14 @@ public class ProfileActivity extends AppCompatActivity {
         progressProfile.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
-    private void toggleWalletBalance() {
-        if (walletBalanceContainer.getVisibility() == View.VISIBLE) {
-            walletBalanceContainer.setVisibility(View.GONE);
-            return;
-        }
-
-        walletBalanceContainer.setVisibility(View.VISIBLE);
-        tvWalletBalance.setText("Đang tải số dư...");
-        loadWalletBalance();
-    }
-
     private void loadWalletBalance() {
         String token = prefsManager.getAccessToken();
         if (token == null || token.trim().isEmpty()) {
-            tvWalletBalance.setText("Thiếu token. Vui lòng đăng nhập lại.");
+            tvWalletAmount.setText("Chưa đăng nhập");
             return;
         }
 
+        tvWalletAmount.setText("Đang tải...");
         ApiClient.getInstance()
                 .getApiService()
                 .getCurrentUserProfile("Bearer " + token)
@@ -215,20 +211,28 @@ public class ProfileActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null
                                 && response.body().isSuccess() && response.body().getData() != null) {
                             UserWallet wallet = response.body().getData().getWallet();
-                            double balance = wallet == null ? 0 : wallet.getBalance();
-                            String amount = CurrencyFormatter.formatVnd(balance);
-                            tvWalletBalance.setText("Số dư: " + amount);
+                            bindWalletAmount(wallet);
                             return;
                         }
 
-                        tvWalletBalance.setText("Không thể tải số dư.");
+                        tvWalletAmount.setText("Không thể tải số dư.");
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<BaseResponse<UserProfile>> call, @NonNull Throwable t) {
-                        tvWalletBalance.setText("Lỗi mạng khi tải số dư.");
+                        tvWalletAmount.setText("Lỗi mạng khi tải số dư.");
                     }
                 });
+    }
+
+    private void bindWalletAmount(UserWallet wallet) {
+        double balance = wallet == null ? 0 : wallet.getBalance();
+        tvWalletAmount.setText(CurrencyFormatter.formatVnd(balance));
+    }
+
+    private void openWalletTopUp() {
+        Intent intent = new Intent(this, WalletTopUpActivity.class);
+        startActivity(intent);
     }
 
     private void updateProfile(String displayName, String imageUrl) {

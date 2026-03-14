@@ -222,7 +222,39 @@ public class AuthActivity extends AppCompatActivity {
      * Gửi Firebase ID Token đến backend API /api/auth/login
      */
     private void loginToBackend(String idToken) {
-        LoginRequest request = new LoginRequest(idToken);
+        String fcmToken = prefsManager.getFcmToken();
+        if (fcmToken == null || fcmToken.trim().isEmpty()) {
+            setStatus("Đang lấy FCM token...");
+            FirebaseMessaging.getInstance().getToken()
+                    .addOnCompleteListener(task -> {
+                        if (!task.isSuccessful()) {
+                            setLoading(false);
+                            showErrorDialog("Lỗi lấy FCM Token",
+                                    "Không thể lấy FCM token. Vui lòng thử lại.");
+                            Log.w(TAG, "Failed to fetch FCM token for login", task.getException());
+                            return;
+                        }
+
+                        String fetchedToken = task.getResult();
+                        if (fetchedToken == null || fetchedToken.trim().isEmpty()) {
+                            setLoading(false);
+                            showErrorDialog("Lỗi lấy FCM Token",
+                                    "FCM token rỗng. Vui lòng thử lại.");
+                            return;
+                        }
+
+                        prefsManager.saveFcmToken(fetchedToken);
+                        loginToBackendWithFcm(idToken, fetchedToken);
+                    });
+            return;
+        }
+
+        loginToBackendWithFcm(idToken, fcmToken);
+    }
+
+    private void loginToBackendWithFcm(String idToken, String fcmToken) {
+        setStatus("Đang đăng nhập...");
+        LoginRequest request = new LoginRequest(idToken, fcmToken);
 
         ApiClient.getInstance().getApiService().login(request).enqueue(new Callback<BaseResponse<LoginResponse>>() {
             @Override

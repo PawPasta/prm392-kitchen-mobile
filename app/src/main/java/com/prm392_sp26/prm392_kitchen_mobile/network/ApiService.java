@@ -10,7 +10,10 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.request.LoginRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateOrderDishesRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.UpdateProfileRequest;
+import com.prm392_sp26.prm392_kitchen_mobile.model.request.WalletTopUpRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.MomoCallbackResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.NotificationItem;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.NotificationListResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderCheckoutResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.OrderHistoryResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
@@ -25,6 +28,7 @@ import com.prm392_sp26.prm392_kitchen_mobile.model.response.ItemDetailResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.PaymentMethodResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.PromotionResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.SearchResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.model.response.WalletTopUpResponse;
 
 import java.util.List;
 
@@ -65,6 +69,23 @@ public interface ApiService {
      */
     @GET("api/users/me")
     Call<BaseResponse<UserProfile>> getCurrentUserProfile(@Header("Authorization") String authHeader);
+
+    /**
+     * Lấy danh sách thông báo của user đang đăng nhập
+     * GET /api/notifications/me
+     */
+    @GET("api/notifications/me")
+    Call<BaseResponse<NotificationListResponse>> getNotificationsMe(
+            @Header("Authorization") String authHeader);
+
+    /**
+     * Lấy chi tiết thông báo của user đang đăng nhập
+     * GET /api/notifications/me/{notificationId}
+     */
+    @GET("api/notifications/me/{notificationId}")
+    Call<BaseResponse<NotificationItem>> getNotificationDetail(
+            @Header("Authorization") String authHeader,
+            @Path("notificationId") long notificationId);
 
     /**
      * Cập nhật profile của user đang đăng nhập
@@ -287,6 +308,15 @@ public interface ApiService {
     @POST("api/payments/momo/callback")
     Call<BaseResponse<MomoCallbackResponse>> momoPaymentCallback(
             @Body MomoCallbackRequest request);
+
+    /**
+     * Nạp tiền vào ví
+     * POST /api/payments/wallet/top-up
+     */
+    @POST("api/payments/wallet/top-up")
+    Call<BaseResponse<WalletTopUpResponse>> topUpWallet(
+            @Header("Authorization") String authHeader,
+            @Body WalletTopUpRequest request);
 
     @POST
     Call<BaseResponse<OrderResponse>> createOrder(

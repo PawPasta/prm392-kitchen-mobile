@@ -23,6 +23,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.DishDetailActivity;
+import com.prm392_sp26.prm392_kitchen_mobile.activities.NotificationActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.StepItemsActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.BannerAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.DishAdapter;
@@ -80,6 +81,7 @@ public class HomeFragment extends Fragment {
         bannerPager = view.findViewById(R.id.bannerPager);
         bannerIndicators = view.findViewById(R.id.bannerIndicators);
         View searchBar = view.findViewById(R.id.layoutHomeSearchBar);
+        View notificationButton = view.findViewById(R.id.btnNotification);
 
         // Setup Layout
         rvDishes.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -94,6 +96,7 @@ public class HomeFragment extends Fragment {
         displayUserInfo();
         setupSearchNavigation(searchBar);
         setupCategoryNavigation(view);
+        setupNotificationNavigation(notificationButton);
 
         setupBanner();
         setupLazyLoading();
@@ -131,6 +134,16 @@ public class HomeFragment extends Fragment {
             return;
         }
         searchBar.setOnClickListener(v -> openStepItems(0, "Tìm kiếm"));
+    }
+
+    private void setupNotificationNavigation(@Nullable View notificationButton) {
+        if (notificationButton == null) {
+            return;
+        }
+        notificationButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(), NotificationActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void bindCategoryClick(@NonNull View root, int viewId, int stepId, @NonNull String stepName) {

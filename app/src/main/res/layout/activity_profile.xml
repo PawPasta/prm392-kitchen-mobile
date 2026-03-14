@@ -28,7 +28,7 @@
                 android:padding="8dp"
                 android:contentDescription=""
                 android:src="@drawable/ic_chevron_left"
-                android:tint="@color/colorTextPrimary" />
+                app:tint="@color/colorTextPrimary" />
 
             <TextView
                 android:layout_width="0dp"
@@ -161,6 +161,95 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+        <!-- WALLET CARD -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardWallet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_wallet_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ví của bạn"
+                        android:textColor="#F4FFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTopUpWallet"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="0dp"
+                        android:minWidth="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:text="Nạp tiền vào ví"
+                        android:textAllCaps="false"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@android:color/white"
+                        app:cornerRadius="14dp"
+                        app:strokeColor="#33FFFFFF"
+                        app:strokeWidth="1dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvWalletAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="-- VND"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:contentDescription=""
+                        android:src="@drawable/ic_profile_credit"
+                        app:tint="#F2FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="Cập nhật tự động theo ví"
+                        android:textColor="#F2FFFFFF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- MENU ITEMS -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -185,7 +274,7 @@
                     android:layout_height="24dp"
                     android:contentDescription=""
                     android:src="@drawable/ic_cart"
-                    android:tint="@color/colorTextPrimary" />
+                    app:tint="@color/colorTextPrimary" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -201,7 +290,7 @@
                     android:layout_height="20dp"
                     android:contentDescription=""
                     android:src="@drawable/ic_chevron_right"
-                    android:tint="@color/colorTextHint" />
+                    app:tint="@color/colorTextHint" />
             </LinearLayout>
 
             <LinearLayout
@@ -220,7 +309,7 @@
                     android:layout_height="24dp"
                     android:contentDescription=""
                     android:src="@drawable/ic_profile_id"
-                    android:tint="@color/colorTextPrimary" />
+                    app:tint="@color/colorTextPrimary" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -236,61 +325,9 @@
                     android:layout_height="20dp"
                     android:contentDescription=""
                     android:src="@drawable/ic_chevron_right"
-                    android:tint="@color/colorTextHint" />
+                    app:tint="@color/colorTextHint" />
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/itemWallet"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_profile_item"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription=""
-                    android:src="@drawable/ic_profile_credit"
-                    android:tint="@color/colorTextPrimary" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="Wallet"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="14sp" />
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription=""
-                    android:src="@drawable/ic_chevron_right"
-                    android:tint="@color/colorTextHint" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/walletBalanceContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_item"
-                android:padding="12dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/tvWalletBalance"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Số dư: --"
-                    android:textColor="@color/colorTextSecondary"
-                    android:textSize="13sp" />
-            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -309,7 +346,7 @@
                 android:layout_height="24dp"
                 android:contentDescription=""
                 android:src="@drawable/ic_logout"
-                android:tint="@color/colorError" />
+                app:tint="@color/colorError" />
 
             <TextView
                 android:layout_width="wrap_content"
