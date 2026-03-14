@@ -23,9 +23,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class PaymentCallbackActivity extends AppCompatActivity {
+public class DepositCallbackActivity extends AppCompatActivity {
 
-    private static final String HOST_PAYMENT_SUCCESS = "payment-success";
     private boolean callbackSubmitted;
 
     @Override
@@ -58,14 +57,7 @@ public class PaymentCallbackActivity extends AppCompatActivity {
         }
         Uri data = intent != null ? intent.getData() : null;
         if (data == null) {
-            Toast.makeText(this, "Thiếu dữ liệu callback thanh toán", Toast.LENGTH_SHORT).show();
-            navigateMain();
-            return;
-        }
-
-        String host = data.getHost();
-        if (host == null || !HOST_PAYMENT_SUCCESS.equalsIgnoreCase(host)) {
-            Toast.makeText(this, "Callback thanh toán không hợp lệ", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Thiếu dữ liệu callback nạp tiền", Toast.LENGTH_SHORT).show();
             navigateMain();
             return;
         }
@@ -88,42 +80,42 @@ public class PaymentCallbackActivity extends AppCompatActivity {
 
         ApiClient.getInstance()
                 .getApiService()
-                .momoPaymentCallback(request)
+                .momoDepositCallback(request)
                 .enqueue(new Callback<BaseResponse<MomoCallbackResponse>>() {
-            @Override
-            public void onResponse(
-                    @NonNull Call<BaseResponse<MomoCallbackResponse>> call,
-                    @NonNull Response<BaseResponse<MomoCallbackResponse>> response) {
-                BaseResponse<MomoCallbackResponse> body = response.body();
-                if (response.isSuccessful() && body != null) {
-                    MomoCallbackResponse data = body.getData();
-                    boolean momoSuccess = data != null && data.getResultCode() == 0;
-                    if (body.isSuccess() && data != null && momoSuccess) {
-                        navigateSuccess(body.getMessage(), data);
-                        return;
+                    @Override
+                    public void onResponse(
+                            @NonNull Call<BaseResponse<MomoCallbackResponse>> call,
+                            @NonNull Response<BaseResponse<MomoCallbackResponse>> response) {
+                        BaseResponse<MomoCallbackResponse> body = response.body();
+                        if (response.isSuccessful() && body != null) {
+                            MomoCallbackResponse data = body.getData();
+                            boolean momoSuccess = data != null && data.getResultCode() == 0;
+                            if (body.isSuccess() && data != null && momoSuccess) {
+                                navigateSuccess(body.getMessage(), data);
+                                return;
+                            }
+
+                            String message = resolveBackendMessage(body, "BE khong tra message");
+                            Toast.makeText(DepositCallbackActivity.this, message, Toast.LENGTH_LONG).show();
+                            navigateMain();
+                            return;
+                        }
+
+                        String message = resolveBackendMessage(body, "BE khong tra message");
+                        Toast.makeText(DepositCallbackActivity.this, message, Toast.LENGTH_LONG).show();
+                        navigateMain();
                     }
 
-                    String message = resolveBackendMessage(body, "BE khong tra message");
-                    Toast.makeText(PaymentCallbackActivity.this, message, Toast.LENGTH_LONG).show();
-                    navigateMain();
-                    return;
-                }
-
-                String message = resolveBackendMessage(body, "BE khong tra message");
-                Toast.makeText(PaymentCallbackActivity.this, message, Toast.LENGTH_LONG).show();
-                navigateMain();
-            }
-
-            @Override
-            public void onFailure(
-                    @NonNull Call<BaseResponse<MomoCallbackResponse>> call,
-                    @NonNull Throwable t) {
-                Toast.makeText(PaymentCallbackActivity.this,
-                        "Lỗi callback: " + t.getMessage(),
-                        Toast.LENGTH_LONG).show();
-                navigateMain();
-            }
-        });
+                    @Override
+                    public void onFailure(
+                            @NonNull Call<BaseResponse<MomoCallbackResponse>> call,
+                            @NonNull Throwable t) {
+                        Toast.makeText(DepositCallbackActivity.this,
+                                "Lỗi callback: " + t.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                        navigateMain();
+                    }
+                });
     }
 
     private void navigateSuccess(String apiMessage, MomoCallbackResponse data) {
@@ -147,11 +139,6 @@ public class PaymentCallbackActivity extends AppCompatActivity {
         finish();
     }
 
-    private String safeParam(Uri uri, String key) {
-        String value = uri.getQueryParameter(key);
-        return value == null ? "" : value;
-    }
-
     private String safeText(String value) {
         return value == null ? "" : value.trim();
     }
@@ -171,6 +158,11 @@ public class PaymentCallbackActivity extends AppCompatActivity {
             }
         }
         return fallback;
+    }
+
+    private String safeParam(Uri uri, String key) {
+        String value = uri.getQueryParameter(key);
+        return value == null ? "" : value;
     }
 
     private long parseLong(String value, long fallback) {

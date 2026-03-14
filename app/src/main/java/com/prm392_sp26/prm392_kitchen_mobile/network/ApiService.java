@@ -309,6 +309,10 @@ public interface ApiService {
     Call<BaseResponse<MomoCallbackResponse>> momoPaymentCallback(
             @Body MomoCallbackRequest request);
 
+    @POST("api/payments/momo/deposit/callback")
+    Call<BaseResponse<MomoCallbackResponse>> momoDepositCallback(
+            @Body MomoCallbackRequest request);
+
     /**
      * Nạp tiền vào ví
      * POST /api/payments/wallet/top-up
