@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -54,10 +55,16 @@ import retrofit2.Response;
 public class CreateCustomOrderActivity extends AppCompatActivity {
 
     private static final String TAG = "CreateCustomOrderActivity";
+    private static final int PAGE_SIZE = 20;
+    private static final int[] DEFAULT_STEP_IDS = { 1, 2, 3, 4, 5 };
+    private static final String[] DEFAULT_STEP_NAMES = { "Carb", "Protein", "Vegetables", "Sauce", "Extra" };
 
     // Views
     private ImageView btnBack;
     private RecyclerView rvItems;
+    private NestedScrollView scrollContainer;
+    private ProgressBar progressItems;
+    private TextView tvEmptyItems;
     private EditText etNote;
     private MaterialButton btnCreateOrder;
     private ProgressBar progressCreateOrder;
@@ -77,7 +84,10 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     // One persistent adapter per stepId so selections survive when switching steps
     private Map<Integer, SelectableItemAdapter> stepAdapterMap = new HashMap<>();
     private Map<Integer, List<ItemResponse>> stepItemsMap = new HashMap<>();
+    private Map<Integer, Integer> nextPageByStepId = new HashMap<>();
+    private Map<Integer, Boolean> hasMoreByStepId = new HashMap<>();
     private Set<Integer> skippedSteps = new HashSet<>();
+    private boolean isLoadingItems = false;
     private PrefsManager prefsManager;
 
     @Override
@@ -101,6 +111,9 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
     private void initializeViews() {
         btnBack = findViewById(R.id.btnBack);
         rvItems = findViewById(R.id.rvItems);
+        scrollContainer = findViewById(R.id.customOrderScroll);
+        progressItems = findViewById(R.id.progressItems);
+        tvEmptyItems = findViewById(R.id.tvEmptyItems);
         etNote = findViewById(R.id.etNote);
         btnCreateOrder = findViewById(R.id.btnCreateOrder);
         progressCreateOrder = findViewById(R.id.progressCreateOrder);
@@ -144,144 +157,203 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
                 updateProgressAndCalories();
             });
         }
+
+        setupPaginationScroll();
     }
 
     private void loadStepsAndItems() {
-        String token = "Bearer " + prefsManager.getAccessToken();
-        loadAllItemsPage(token, 0, new ArrayList<>());
-    }
-
-    private void loadAllItemsPage(String token, int page, List<ItemResponse> accumulator) {
-        ApiClient.getInstance()
-                .getApiService()
-                .getAllItems(token, page, 100)
-                .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
-                    @Override
-                    public void onResponse(
-                            Call<BaseResponse<PageResponse<ItemResponse>>> call,
-                            Response<BaseResponse<PageResponse<ItemResponse>>> response) {
-                        if (response.isSuccessful() && response.body() != null
-                                && response.body().isSuccess()
-                                && response.body().getData() != null) {
-                            PageResponse<ItemResponse> pageData = response.body().getData();
-                            List<ItemResponse> pageItems = pageData.getContent();
-                            if (pageItems != null && !pageItems.isEmpty()) {
-                                accumulator.addAll(pageItems);
-                            }
-                            if (pageData.isLast()) {
-                                processAllItems(accumulator);
-                                return;
-                            }
-                            loadAllItemsPage(token, page + 1, accumulator);
-                            return;
-                        }
-                        Toast.makeText(CreateCustomOrderActivity.this,
-                                "Lỗi tải danh sách nguyên liệu",
-                                Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onFailure(Call<BaseResponse<PageResponse<ItemResponse>>> call, Throwable t) {
-                        Toast.makeText(CreateCustomOrderActivity.this,
-                                "Lỗi kết nối: " + t.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    private void processAllItems(List<ItemResponse> allItems) {
-        if (allItems == null || allItems.isEmpty()) {
-            Toast.makeText(this, "Không có nguyên liệu nào", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Map<String, List<ItemResponse>> groupedItems = new HashMap<>();
-        Map<String, Integer> stepNameToId = new HashMap<>();
-
-        for (ItemResponse item : allItems) {
-            String stepName = item.getStepName();
-            int stepId = item.getStepId();
-
-            if (!"ENABLE".equals(item.getStatus())) {
-                continue;
-            }
-
-            if (stepName != null && !stepName.isEmpty()) {
-                if (!groupedItems.containsKey(stepName)) {
-                    groupedItems.put(stepName, new ArrayList<>());
-                    stepNameToId.put(stepName, stepId);
-                }
-                groupedItems.get(stepName).add(item);
-            }
-        }
-
-        steps.clear();
-        stepItemsMap.clear();
-        for (Map.Entry<String, Integer> entry : stepNameToId.entrySet()) {
-            String stepName = entry.getKey();
-            int stepId = entry.getValue();
-
-            steps.add(new DishStepResponse() {
-                @Override
-                public int getStepId() { return stepId; }
-                @Override
-                public String getStepName() { return stepName; }
-            });
-            stepItemsMap.put(stepId, groupedItems.get(stepName));
-        }
-
+        initializeSteps();
         if (!steps.isEmpty()) {
             setCurrentStep(0);
         }
         updateProgressAndCalories();
     }
 
-    private void loadItemsForStep(int stepId) {
-        String token = "Bearer " + prefsManager.getAccessToken();
-        loadItemsForStepPage(token, stepId, 0, new ArrayList<>());
-    }
-
-    private void loadItemsForStepPage(
-            String token,
-            int stepId,
-            int page,
-            List<ItemResponse> accumulator) {
-        ApiClient.getInstance()
-                .getApiService()
-                .getItemsByStep(token, stepId, page, 50)
-                .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
-            @Override
-            public void onResponse(Call<BaseResponse<PageResponse<ItemResponse>>> call, Response<BaseResponse<PageResponse<ItemResponse>>> response) {
-                if (!response.isSuccessful()
-                        || response.body() == null
-                        || !response.body().isSuccess()
-                        || response.body().getData() == null) {
-                    Toast.makeText(CreateCustomOrderActivity.this, "Không có nguyên liệu cho bước này", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                PageResponse<ItemResponse> pageData = response.body().getData();
-                List<ItemResponse> items = pageData.getContent();
-                if (items != null && !items.isEmpty()) {
-                    accumulator.addAll(items);
-                }
-                if (pageData.isLast()) {
-                    stepItemsMap.put(stepId, new ArrayList<>(accumulator));
-                    displayItemsForStep(stepId);
-                    return;
-                }
-                loadItemsForStepPage(token, stepId, page + 1, accumulator);
+    private void setupPaginationScroll() {
+        if (scrollContainer == null) {
+            return;
+        }
+        scrollContainer.setOnScrollChangeListener((NestedScrollView v, int scrollX, int scrollY,
+                                                   int oldScrollX, int oldScrollY) -> {
+            if (scrollY <= oldScrollY) {
+                return;
             }
-
-            @Override
-            public void onFailure(Call<BaseResponse<PageResponse<ItemResponse>>> call, Throwable t) {
-                Toast.makeText(CreateCustomOrderActivity.this, "Lỗi tải nguyên liệu: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            View content = v.getChildAt(0);
+            if (content == null) {
+                return;
+            }
+            int threshold = dpToPx(v, 120);
+            if (scrollY + v.getHeight() + threshold >= content.getHeight()) {
+                loadNextPageForCurrentStep();
             }
         });
     }
 
+    private void initializeSteps() {
+        steps.clear();
+        stepItemsMap.clear();
+        stepAdapterMap.clear();
+        skippedSteps.clear();
+        nextPageByStepId.clear();
+        hasMoreByStepId.clear();
+
+        for (int i = 0; i < DEFAULT_STEP_IDS.length; i++) {
+            int stepId = DEFAULT_STEP_IDS[i];
+            String stepName = DEFAULT_STEP_NAMES[i];
+            steps.add(new DishStepResponse() {
+                @Override
+                public int getStepId() { return stepId; }
+                @Override
+                public String getStepName() { return stepName; }
+            });
+            stepItemsMap.put(stepId, new ArrayList<>());
+            nextPageByStepId.put(stepId, 0);
+            hasMoreByStepId.put(stepId, true);
+        }
+    }
+
+    private void ensureStepItemsLoaded(int stepId) {
+        List<ItemResponse> items = stepItemsMap.get(stepId);
+        if (items != null && !items.isEmpty()) {
+            updateEmptyState(stepId);
+            return;
+        }
+        if (Boolean.TRUE.equals(hasMoreByStepId.get(stepId))) {
+            loadNextPageForStep(stepId, false);
+        } else {
+            updateEmptyState(stepId);
+        }
+    }
+
+    private void loadNextPageForCurrentStep() {
+        if (selectedStep == null) {
+            return;
+        }
+        loadNextPageForStep(selectedStep.getStepId(), true);
+    }
+
+    private void loadNextPageForStep(int stepId, boolean appendMode) {
+        if (isLoadingItems) {
+            return;
+        }
+        if (Boolean.FALSE.equals(hasMoreByStepId.get(stepId))) {
+            return;
+        }
+
+        String token = prefsManager.getAccessToken();
+        if (token == null || token.trim().isEmpty()) {
+            Toast.makeText(this, "Thiếu token. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Integer page = nextPageByStepId.get(stepId);
+        if (page == null) {
+            page = 0;
+        }
+        final int pageToLoad = page;
+
+        isLoadingItems = true;
+        setItemsLoading(true);
+
+        ApiClient.getInstance()
+                .getApiService()
+                .getItemsByStep("Bearer " + token, stepId, pageToLoad, PAGE_SIZE)
+                .enqueue(new Callback<BaseResponse<PageResponse<ItemResponse>>>() {
+                    @Override
+                    public void onResponse(
+                            Call<BaseResponse<PageResponse<ItemResponse>>> call,
+                            Response<BaseResponse<PageResponse<ItemResponse>>> response) {
+                        isLoadingItems = false;
+                        setItemsLoading(false);
+
+                        if (!response.isSuccessful()
+                                || response.body() == null
+                                || !response.body().isSuccess()
+                                || response.body().getData() == null) {
+                            Toast.makeText(CreateCustomOrderActivity.this,
+                                    "Không tải được nguyên liệu cho bước này",
+                                    Toast.LENGTH_SHORT).show();
+                            updateEmptyState(stepId);
+                            return;
+                        }
+
+                        PageResponse<ItemResponse> pageData = response.body().getData();
+                        List<ItemResponse> incomingItems = pageData.getContent();
+                        List<ItemResponse> enabledItems = new ArrayList<>();
+                        if (incomingItems != null) {
+                            for (ItemResponse item : incomingItems) {
+                                if (item != null && "ENABLE".equals(item.getStatus())) {
+                                    enabledItems.add(item);
+                                }
+                            }
+                        }
+
+                        List<ItemResponse> items = getOrCreateStepItems(stepId);
+                        int start = items.size();
+                        items.addAll(enabledItems);
+
+                        hasMoreByStepId.put(stepId, !pageData.isLast());
+                        nextPageByStepId.put(stepId, pageToLoad + 1);
+
+                        if (selectedStep != null && stepId == selectedStep.getStepId()) {
+                            SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
+                            if (adapter == null) {
+                                displayItemsForStep(stepId);
+                            } else if (!enabledItems.isEmpty()) {
+                                adapter.notifyItemRangeInserted(start, enabledItems.size());
+                            }
+                            updateEmptyState(stepId);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<PageResponse<ItemResponse>>> call, Throwable t) {
+                        isLoadingItems = false;
+                        setItemsLoading(false);
+                        updateEmptyState(stepId);
+                        Toast.makeText(CreateCustomOrderActivity.this,
+                                "Lỗi tải nguyên liệu: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void setItemsLoading(boolean loading) {
+        if (progressItems != null) {
+            progressItems.setVisibility(loading ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void updateEmptyState(int stepId) {
+        if (tvEmptyItems == null) {
+            return;
+        }
+        List<ItemResponse> items = stepItemsMap.get(stepId);
+        boolean isEmpty = items == null || items.isEmpty();
+        Integer nextPage = nextPageByStepId.get(stepId);
+        boolean hasLoadedOnce = nextPage != null && nextPage > 0;
+        boolean noMore = Boolean.FALSE.equals(hasMoreByStepId.get(stepId));
+        tvEmptyItems.setVisibility(isEmpty && !isLoadingItems && (hasLoadedOnce || noMore)
+                ? View.VISIBLE
+                : View.GONE);
+    }
+
+    private List<ItemResponse> getOrCreateStepItems(int stepId) {
+        List<ItemResponse> items = stepItemsMap.get(stepId);
+        if (items == null) {
+            items = new ArrayList<>();
+            stepItemsMap.put(stepId, items);
+        }
+        return items;
+    }
+
+    private int dpToPx(View view, int dp) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
     private void displayItemsForStep(int stepId) {
-        List<ItemResponse> items = stepItemsMap.getOrDefault(stepId, new ArrayList<>());
+        List<ItemResponse> items = getOrCreateStepItems(stepId);
         // Reuse existing adapter so selections are preserved when switching steps
         SelectableItemAdapter adapter = stepAdapterMap.get(stepId);
         if (adapter == null) {
@@ -292,6 +364,7 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         if (rvItems != null) {
             rvItems.setAdapter(adapter);
         }
+        updateEmptyState(stepId);
     }
 
     private void createOrder() {
@@ -527,7 +600,12 @@ public class CreateCustomOrderActivity extends AppCompatActivity {
         }
         currentStepIndex = index;
         selectedStep = steps.get(index);
-        displayItemsForStep(selectedStep.getStepId());
+        int stepId = selectedStep.getStepId();
+        displayItemsForStep(stepId);
+        ensureStepItemsLoaded(stepId);
+        if (scrollContainer != null && rvItems != null) {
+            scrollContainer.post(() -> scrollContainer.smoothScrollTo(0, rvItems.getTop()));
+        }
         updateCurrentStepUi();
     }
 
