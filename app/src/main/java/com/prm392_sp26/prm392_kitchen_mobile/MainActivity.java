@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 import com.prm392_sp26.prm392_kitchen_mobile.fragments.HomeFragment;
+import com.prm392_sp26.prm392_kitchen_mobile.fragments.GuideFragment;
 import com.prm392_sp26.prm392_kitchen_mobile.fragments.MenuFragment;
 import com.prm392_sp26.prm392_kitchen_mobile.fragments.OrdersFragment;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.CartActivity;
@@ -85,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new MenuFragment();
             } else if (itemId == R.id.nav_orders) {
                 selectedFragment = new OrdersFragment();
+            } else if (itemId == R.id.nav_guide) {
+                selectedFragment = new GuideFragment();
             } else if (itemId == R.id.nav_profile) {
                 startActivity(new android.content.Intent(this, ProfileActivity.class));
                 bottomNav.post(() -> bottomNav.setSelectedItemId(lastSelectedItemId));
