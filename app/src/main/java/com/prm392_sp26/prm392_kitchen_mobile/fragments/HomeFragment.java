@@ -2,13 +2,10 @@ package com.prm392_sp26.prm392_kitchen_mobile.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,17 +14,14 @@ import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.viewpager2.widget.MarginPageTransformer;
-import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.prm392_sp26.prm392_kitchen_mobile.R;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.DishDetailActivity;
+import com.prm392_sp26.prm392_kitchen_mobile.activities.LocationDetailActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.NotificationActivity;
 import com.prm392_sp26.prm392_kitchen_mobile.activities.StepItemsActivity;
-import com.prm392_sp26.prm392_kitchen_mobile.adapters.BannerAdapter;
 import com.prm392_sp26.prm392_kitchen_mobile.adapters.DishAdapter;
-import com.prm392_sp26.prm392_kitchen_mobile.model.data.BannerItem;
 import com.prm392_sp26.prm392_kitchen_mobile.model.request.RefreshTokenRequest;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.DishResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.model.response.LoginResponse;
@@ -35,7 +29,14 @@ import com.prm392_sp26.prm392_kitchen_mobile.network.ApiClient;
 import com.prm392_sp26.prm392_kitchen_mobile.network.ApiService;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.BaseResponse;
 import com.prm392_sp26.prm392_kitchen_mobile.shared.PageResponse;
+import com.prm392_sp26.prm392_kitchen_mobile.util.Constants;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
+
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.CustomZoomButtonsController;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,12 +49,10 @@ public class HomeFragment extends Fragment {
 
     private static final String TAG = "HomeFragment";
     private static final int PAGE_SIZE = 10;
-    private static final int BANNER_INTERVAL_MS = 4000;
     private TextView tvWelcome, tvUserInfo;
     private NestedScrollView homeScroll;
-    private ViewPager2 bannerPager;
-    private LinearLayout bannerIndicators;
-    private final Handler bannerHandler = new Handler(Looper.getMainLooper());
+    private MapView homeMapView;
+    private View homeMapTouchOverlay;
     private RecyclerView rvDishes;
     private DishAdapter dishAdapter;
     private List<DishResponse> dishList = new ArrayList<>();
@@ -63,7 +62,6 @@ public class HomeFragment extends Fragment {
     private boolean isLoading;
     private boolean isLastPage;
     private boolean isRetrying = false;
-    private Runnable bannerRunnable;
 
     @Nullable
     @Override
@@ -78,8 +76,8 @@ public class HomeFragment extends Fragment {
         tvUserInfo = view.findViewById(R.id.tvUserInfo);
         rvDishes = view.findViewById(R.id.rvDishes);
         homeScroll = view.findViewById(R.id.homeScroll);
-        bannerPager = view.findViewById(R.id.bannerPager);
-        bannerIndicators = view.findViewById(R.id.bannerIndicators);
+        homeMapView = view.findViewById(R.id.homeMapView);
+        homeMapTouchOverlay = view.findViewById(R.id.homeMapTouchOverlay);
         View searchBar = view.findViewById(R.id.layoutHomeSearchBar);
         View notificationButton = view.findViewById(R.id.btnNotification);
 
@@ -98,7 +96,8 @@ public class HomeFragment extends Fragment {
         setupCategoryNavigation(view);
         setupNotificationNavigation(notificationButton);
 
-        setupBanner();
+        setupHomeMap();
+        setupHomeMapNavigation();
         setupLazyLoading();
         currentPage = 0;
         isLastPage = false;
@@ -146,6 +145,18 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void setupHomeMapNavigation() {
+        if (homeMapTouchOverlay == null) {
+            return;
+        }
+        homeMapTouchOverlay.setOnClickListener(v -> openLocationDetail());
+    }
+
+    private void openLocationDetail() {
+        Intent intent = new Intent(requireActivity(), LocationDetailActivity.class);
+        startActivity(intent);
+    }
+
     private void bindCategoryClick(@NonNull View root, int viewId, int stepId, @NonNull String stepName) {
         View categoryView = root.findViewById(viewId);
         if (categoryView == null) {
@@ -159,6 +170,26 @@ public class HomeFragment extends Fragment {
         intent.putExtra(StepItemsActivity.EXTRA_STEP_ID, stepId);
         intent.putExtra(StepItemsActivity.EXTRA_STEP_NAME, stepName);
         startActivity(intent);
+    }
+
+    private void setupHomeMap() {
+        if (homeMapView == null) {
+            return;
+        }
+
+        GeoPoint storePoint = new GeoPoint(Constants.STORE_LATITUDE, Constants.STORE_LONGITUDE);
+        homeMapView.setTileSource(TileSourceFactory.MAPNIK);
+        homeMapView.getController().setZoom(16.0);
+        homeMapView.getController().setCenter(storePoint);
+        homeMapView.setMultiTouchControls(false);
+        homeMapView.setClickable(false);
+        homeMapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
+
+        Marker marker = new Marker(homeMapView);
+        marker.setPosition(storePoint);
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        marker.setTitle(Constants.STORE_NAME);
+        homeMapView.getOverlays().add(marker);
     }
 
     private void setupLazyLoading() {
@@ -258,81 +289,6 @@ public class HomeFragment extends Fragment {
             });
     }
 
-    private void setupBanner() {
-        List<BannerItem> items = new ArrayList<>();
-        items.add(new BannerItem(
-                "Món mới trong ngày",
-                "Thử ngay các món nóng vừa ra bếp",
-                "Xem ngay",
-                "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg"));
-        items.add(new BannerItem(
-                "Chef's Selection",
-                "Top món ăn được đặt nhiều nhất tuần này",
-                "Khám phá",
-                "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg"));
-        items.add(new BannerItem(
-                "Healthy Bowl",
-                "Gợi ý bữa ăn cân bằng, giàu năng lượng",
-                "Đặt ngay",
-                "https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg"));
-
-        BannerAdapter bannerAdapter = new BannerAdapter(items);
-        bannerPager.setAdapter(bannerAdapter);
-        bannerPager.setPageTransformer(new MarginPageTransformer(dpToPx(12)));
-        setupBannerIndicators(items.size());
-        updateBannerIndicators(0);
-
-        bannerPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                updateBannerIndicators(position);
-                resetBannerAutoScroll();
-            }
-        });
-
-        bannerRunnable = () -> {
-            if (bannerAdapter.getItemCount() == 0) {
-                return;
-            }
-            int next = (bannerPager.getCurrentItem() + 1) % bannerAdapter.getItemCount();
-            bannerPager.setCurrentItem(next, true);
-            bannerHandler.postDelayed(bannerRunnable, BANNER_INTERVAL_MS);
-        };
-    }
-
-    private void setupBannerIndicators(int count) {
-        bannerIndicators.removeAllViews();
-        for (int i = 0; i < count; i++) {
-            View dot = new View(requireContext());
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dpToPx(8), dpToPx(8));
-            params.setMargins(dpToPx(4), 0, dpToPx(4), 0);
-            dot.setLayoutParams(params);
-            dot.setBackgroundResource(R.drawable.indicator_dot_inactive);
-            bannerIndicators.addView(dot);
-        }
-    }
-
-    private void updateBannerIndicators(int activePosition) {
-        for (int i = 0; i < bannerIndicators.getChildCount(); i++) {
-            View dot = bannerIndicators.getChildAt(i);
-            LinearLayout.LayoutParams params;
-            if (i == activePosition) {
-                params = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(8));
-                dot.setBackgroundResource(R.drawable.indicator_dot_active);
-            } else {
-                params = new LinearLayout.LayoutParams(dpToPx(8), dpToPx(8));
-                dot.setBackgroundResource(R.drawable.indicator_dot_inactive);
-            }
-            params.setMargins(dpToPx(4), 0, dpToPx(4), 0);
-            dot.setLayoutParams(params);
-        }
-    }
-
-    private void resetBannerAutoScroll() {
-        bannerHandler.removeCallbacks(bannerRunnable);
-        bannerHandler.postDelayed(bannerRunnable, BANNER_INTERVAL_MS);
-    }
-
     private int dpToPx(int value) {
         return (int) (value * getResources().getDisplayMetrics().density);
     }
@@ -340,14 +296,24 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (bannerRunnable != null) {
-            bannerHandler.postDelayed(bannerRunnable, BANNER_INTERVAL_MS);
+        if (homeMapView != null) {
+            homeMapView.onResume();
         }
     }
 
     @Override
     public void onPause() {
-        bannerHandler.removeCallbacksAndMessages(null);
+        if (homeMapView != null) {
+            homeMapView.onPause();
+        }
         super.onPause();
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (homeMapView != null) {
+            homeMapView.onDetach();
+        }
+        super.onDestroyView();
     }
 }

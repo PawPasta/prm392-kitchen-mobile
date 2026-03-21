@@ -17,4 +17,8 @@ public class Constants {
     public static final String KEY_IS_LOGGED_IN = "is_logged_in";
     public static final String KEY_FCM_TOKEN = "fcm_token";
 
+    public static final double STORE_LATITUDE = 10.8410;
+    public static final double STORE_LONGITUDE = 106.8099;
+    public static final String STORE_NAME = "Đại học FPT HCM";
+
 }

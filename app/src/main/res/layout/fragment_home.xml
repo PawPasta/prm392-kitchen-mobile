@@ -188,23 +188,33 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- BANNER CAROUSEL -->
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/bannerPager"
+            <!-- MAP PREVIEW -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="180dp"
                 android:layout_marginHorizontal="20dp"
-                android:clipToPadding="false"
-                android:clipChildren="false"
-                android:layout_marginTop="32dp" />
+                android:layout_marginTop="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
-            <LinearLayout
-                android:id="@+id/bannerIndicators"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal" />
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <org.osmdroid.views.MapView
+                        android:id="@+id/homeMapView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                    <View
+                        android:id="@+id/homeMapTouchOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
 
             <!-- MÓN PHỔ BIẾN -->
             <TextView

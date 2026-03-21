@@ -44,6 +44,11 @@
             android:name=".activities.DishDetailActivity"
             android:exported="false" />
 
+        <!-- LocationDetailActivity - Chi tiết địa điểm -->
+        <activity
+            android:name=".activities.LocationDetailActivity"
+            android:exported="false" />
+
         <!-- ProfileActivity - User profile -->
         <activity
             android:name=".activities.ProfileActivity"

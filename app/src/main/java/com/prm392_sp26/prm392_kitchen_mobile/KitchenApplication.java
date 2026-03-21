@@ -1,6 +1,7 @@
 package com.prm392_sp26.prm392_kitchen_mobile;
 
 import android.app.Application;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.firebase.FirebaseApp;
@@ -8,6 +9,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.prm392_sp26.prm392_kitchen_mobile.util.AppForegroundTracker;
 import com.prm392_sp26.prm392_kitchen_mobile.util.NotificationHelper;
 import com.prm392_sp26.prm392_kitchen_mobile.util.PrefsManager;
+import org.osmdroid.config.Configuration;
 
 public class KitchenApplication extends Application {
 
@@ -24,6 +26,8 @@ public class KitchenApplication extends Application {
         instance = this;
         AppForegroundTracker.init(this);
         FirebaseApp.initializeApp(this);
+        Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
+        Configuration.getInstance().setUserAgentValue(getPackageName());
         NotificationHelper.createNotificationChannel(this);
         fetchAndStoreFcmTokenIfNeeded();
     }
